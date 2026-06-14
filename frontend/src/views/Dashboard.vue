@@ -359,9 +359,10 @@ onMounted(async () => {
 }
 
 .items-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  overflow: hidden;
 }
 
 .loading, .empty {
