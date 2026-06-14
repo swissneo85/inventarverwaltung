@@ -228,7 +228,7 @@ class BoxController extends BaseApiController
             return $this->error('Box nicht gefunden', 404);
         }
 
-        $query = $box->items()->with(['category']);
+        $query = $box->items()->with(['category', 'coverImage']);
         
         if ($request->has('search')) {
             $query->search($request->search);

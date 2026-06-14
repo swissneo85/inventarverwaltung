@@ -129,7 +129,7 @@ class RoomController extends BaseApiController
             return $this->error('Raum nicht gefunden', 404);
         }
 
-        $query = $room->items()->with(['category']);
+        $query = $room->items()->with(['category', 'coverImage']);
         
         if ($request->has('search')) {
             $query->search($request->search);
