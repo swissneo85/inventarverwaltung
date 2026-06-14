@@ -2,8 +2,10 @@
   <aside class="sidebar" :class="{ collapsed, 'mobile-open': mobileOpen }">
     <div class="sidebar-header">
       <div class="logo">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+        <svg class="logo-icon" xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24">
+          <polygon points="12,3 20,7.5 12,12 4,7.5" fill="#2dd4bf"/>
+          <polygon points="20,7.5 20,16.5 12,21 12,12" fill="#0d9488"/>
+          <polygon points="4,7.5 12,12 12,21 4,16.5" fill="#0f766e"/>
         </svg>
         <span v-if="!collapsed" class="logo-text">Inventar</span>
       </div>
@@ -164,6 +166,17 @@ function onNavClick() {
   border-bottom: 1px solid #374151;
 }
 
+@keyframes cube-spin-in {
+  from {
+    transform: scale(0) rotate(-180deg);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
 .logo {
   display: flex;
   align-items: center;
@@ -171,8 +184,14 @@ function onNavClick() {
   color: white;
   font-size: 1.125rem;
   font-weight: 600;
-  svg { flex-shrink: 0; }
   .logo-text { white-space: nowrap; }
+}
+
+.logo-icon {
+  flex-shrink: 0;
+  transform-origin: center;
+  transform-box: fill-box;
+  animation: cube-spin-in 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
 .sidebar-nav {
