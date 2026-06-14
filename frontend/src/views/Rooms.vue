@@ -48,6 +48,7 @@
             <img v-if="room.image_url" :src="room.image_url" :alt="room.name" class="thumb-img">
             <span v-else class="thumb-id">R{{ room.id }}</span>
           </router-link>
+          <span class="list-id">R{{ room.id }}</span>
           <div class="list-info">
             <router-link :to="`/rooms/${room.id}`" class="list-name" @click.stop>{{ room.name }}</router-link>
             <div class="list-sub">{{ room.description || '' }}</div>
@@ -267,6 +268,7 @@ async function deleteRoom() {
 }
 .thumb-img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .thumb-id { font-size: 0.7rem; font-weight: 700; color: #d97706; }
+.list-id { font-size: 0.75rem; font-weight: 600; color: #d97706; flex-shrink: 0; min-width: 32px; }
 .list-info { flex: 1; min-width: 0; }
 .list-name {
   font-weight: 600; font-size: 0.9rem; color: #111827; text-decoration: none; display: block;

@@ -63,6 +63,7 @@
             <img v-if="box.image_url" :src="box.image_url" :alt="box.name" class="thumb-img">
             <span v-else class="thumb-id">B{{ box.id }}</span>
           </div>
+          <span class="list-id">B{{ box.id }}</span>
           <div class="list-info">
             <div class="list-name">{{ box.name }}</div>
             <div class="list-sub">{{ box.room ? box.room.name : 'Inbox' }}</div>
@@ -294,6 +295,7 @@ async function doDelete() {
 }
 .thumb-img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .thumb-id { font-size: 0.7rem; font-weight: 700; color: #7c3aed; }
+.list-id { font-size: 0.75rem; font-weight: 600; color: #7c3aed; flex-shrink: 0; min-width: 32px; }
 .list-info { flex: 1; min-width: 0; }
 .list-name { font-weight: 600; font-size: 0.9rem; color: #111827; }
 .list-sub { font-size: 0.8rem; color: #9ca3af; }
