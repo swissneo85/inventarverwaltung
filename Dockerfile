@@ -6,6 +6,8 @@
 
 FROM php:8.4-fpm-alpine
 
+ARG APP_VERSION=dev
+
 # Install dependencies
 RUN apk add --no-cache nginx sqlite sqlite-dev curl supervisor nodejs npm git unzip \
     && docker-php-ext-install pdo_sqlite pdo_mysql
@@ -35,12 +37,13 @@ QUEUE_CONNECTION=sync
 LOG_CHANNEL=errorlog
 LOG_LEVEL=warning
 EOF
+RUN echo "APP_VERSION=${APP_VERSION}" >> /var/www/html/.env
 
 # Build frontend
 COPY frontend/package.json /tmp/frontend/package.json
 RUN cd /tmp/frontend && npm install && mkdir -p /var/www/html/public
 COPY frontend/ /tmp/frontend/
-RUN cd /tmp/frontend && npm run build && cp -r dist/* /var/www/html/public/
+RUN cd /tmp/frontend && echo "VITE_APP_VERSION=${APP_VERSION}" > .env && npm run build && cp -r dist/* /var/www/html/public/
 
 # Permissions VOR composer install (bootstrap/cache muss existieren)
 RUN mkdir -p storage/logs storage/framework/cache storage/framework/sessions storage/framework/views bootstrap/cache /app/data /run/php \

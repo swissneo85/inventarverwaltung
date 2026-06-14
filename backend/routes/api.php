@@ -28,8 +28,9 @@ use App\Http\Controllers\Api\UserCategoryPermissionController;
 |
 */
 
-// Auth Routes (öffentlich)
+// Öffentliche Routes (kein Auth)
 Route::post('/login', [AuthController::class, 'login']);
+Route::get('/version', fn() => response()->json(['version' => env('APP_VERSION', 'dev')]));
 
 // Geschützte Routes
 Route::middleware('auth:sanctum')->group(function () {

@@ -233,6 +233,22 @@ class ItemController extends BaseApiController
             'image' => 'nullable|string',
         ]);
 
+        // Leere Strings für FK-Felder auf NULL normalisieren
+        foreach (['category_id', 'person_id', 'loaned_to_person_id', 'room_id', 'box_id'] as $field) {
+            if (array_key_exists($field, $validated) && $validated[$field] === '') {
+                $validated[$field] = null;
+            }
+        }
+
+        // Wenn kein Standort zugewiesen, Item in Inbox
+        if (array_key_exists('room_id', $validated) || array_key_exists('box_id', $validated)) {
+            if (!($validated['room_id'] ?? null) && !($validated['box_id'] ?? null)) {
+                $validated['is_in_inbox'] = true;
+            } else {
+                $validated['is_in_inbox'] = false;
+            }
+        }
+
         $item->update($validated);
 
         return $this->success($item->load(['category', 'person', 'loanedToPerson', 'room', 'box']), 'Item aktualisiert');

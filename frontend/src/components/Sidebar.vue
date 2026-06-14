@@ -115,6 +115,7 @@
         </svg>
         <span v-if="!collapsed">Einstellungen</span>
       </router-link>
+      <div v-if="!collapsed" class="app-version">{{ appVersion }}</div>
     </div>
   </aside>
 </template>
@@ -132,6 +133,8 @@ const emit = defineEmits(['toggle', 'close'])
 const authStore = useAuthStore()
 const isAdmin = computed(() => authStore.isAdmin)
 const isEditor = computed(() => authStore.isEditor)
+
+const appVersion = import.meta.env.VITE_APP_VERSION || 'dev'
 
 function onNavClick() {
   emit('close')
@@ -205,6 +208,15 @@ function onNavClick() {
 .sidebar-footer {
   padding: 0.75rem;
   border-top: 1px solid #374151;
+}
+
+.app-version {
+  padding: 0.25rem 0.75rem 0.125rem;
+  font-size: 0.65rem;
+  color: #4b5563;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 /* ─── Mobile (< 1024px) ─── */
