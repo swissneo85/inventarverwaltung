@@ -85,7 +85,7 @@
               <label>Besitzer</label>
               <SearchableSelect
                 v-model="form.person_id"
-                :options="personOptions"
+                :options="personOwnerOptions"
                 placeholder="Besitzer wählen…"
                 create-route="PersonCreate"
                 create-label="Neue Person anlegen"
@@ -96,7 +96,7 @@
               <label>Ausgeliehen an</label>
               <SearchableSelect
                 v-model="form.loaned_to_person_id"
-                :options="personOptions"
+                :options="personLoanOptions"
                 placeholder="Person wählen…"
                 create-route="PersonCreate"
                 create-label="Neue Person anlegen"
@@ -281,21 +281,30 @@ const boxes = ref([])
 const persons = ref([])
 const pendingFiles = ref([])
 
-const roomOptions = computed(() =>
-  rooms.value.map(r => ({ value: r.id, label: r.name }))
-)
+const roomOptions = computed(() => [
+  { value: '', label: '— Inbox (kein Raum) —' },
+  ...rooms.value.map(r => ({ value: r.id, label: r.name })),
+])
 
-const boxOptions = computed(() =>
-  boxes.value.map(b => ({ value: b.id, label: b.name }))
-)
+const boxOptions = computed(() => [
+  { value: '', label: '— keine Box —' },
+  ...boxes.value.map(b => ({ value: b.id, label: b.name })),
+])
 
-const categoryOptions = computed(() =>
-  categories.value.map(c => ({ value: c.id, label: c.name }))
-)
+const categoryOptions = computed(() => [
+  { value: '', label: '— keine Kategorie —' },
+  ...categories.value.map(c => ({ value: c.id, label: c.name })),
+])
 
-const personOptions = computed(() =>
-  persons.value.map(p => ({ value: p.id, label: p.name }))
-)
+const personOwnerOptions = computed(() => [
+  { value: '', label: '— kein Besitzer —' },
+  ...persons.value.map(p => ({ value: p.id, label: p.name })),
+])
+
+const personLoanOptions = computed(() => [
+  { value: '', label: '— niemand —' },
+  ...persons.value.map(p => ({ value: p.id, label: p.name })),
+])
 
 const form = ref({
   name: '',
@@ -471,17 +480,33 @@ async function deleteItem() {
   }
 }
 
+function buildPayload() {
+  const f = form.value
+  const nullify = v => (v === '' || v === undefined) ? null : v
+  const payload = {
+    ...f,
+    category_id: nullify(f.category_id),
+    person_id: nullify(f.person_id),
+    loaned_to_person_id: nullify(f.loaned_to_person_id),
+    room_id: nullify(f.room_id),
+    box_id: nullify(f.box_id),
+  }
+  payload.is_in_inbox = !payload.room_id && !payload.box_id
+  return payload
+}
+
 async function save() {
   if (!form.value.name || saving.value) return
   saving.value = true
   try {
     sessionStorage.removeItem(FORM_DRAFT_KEY)
+    const payload = buildPayload()
     if (id) {
-      await api.put(`/items/${id}`, form.value)
+      await api.put(`/items/${id}`, payload)
       toast.success('Gespeichert')
       router.push({ name: 'ItemDetail', params: { id } })
     } else {
-      const res = await api.post('/items', form.value)
+      const res = await api.post('/items', payload)
       const newId = res.data.data?.id
       if (newId && pendingFiles.value.length) {
         for (const pf of pendingFiles.value) {
