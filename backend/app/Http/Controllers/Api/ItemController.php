@@ -104,7 +104,7 @@ class ItemController extends BaseApiController
      */
     public function inbox(Request $request)
     {
-        $items = Item::with(['category'])
+        $items = Item::with(['category', 'coverImage'])
             ->where('is_in_inbox', true)
             ->orderBy('created_at', 'desc')
             ->paginate($request->get('per_page', 50));

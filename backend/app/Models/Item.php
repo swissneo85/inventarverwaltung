@@ -59,7 +59,7 @@ class Item extends Model
         'loaned_to_person_id' => 'integer',
     ];
 
-    protected $appends = ['display_id', 'qr_code_url', 'location_type'];
+    protected $appends = ['display_id', 'qr_code_url', 'location_type', 'image_url'];
 
     /**
      * Sichtbare Kennung: I{id}
@@ -92,6 +92,14 @@ class Item extends Model
             return 'room';
         }
         return 'unknown';
+    }
+
+    public function getImageUrlAttribute(): ?string
+    {
+        if ($this->relationLoaded('coverImage') && $this->coverImage) {
+            return $this->coverImage->url;
+        }
+        return null;
     }
 
     /**

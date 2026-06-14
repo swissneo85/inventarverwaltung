@@ -61,6 +61,10 @@
         <!-- List View -->
         <div v-if="itemsViewMode === 'list'" class="sub-list">
           <router-link v-for="item in items" :key="item.id" :to="`/items/${item.id}`" class="sub-item">
+            <div class="sub-thumb">
+              <img v-if="item.image_url" :src="item.image_url" :alt="item.name" class="sub-thumb-img">
+              <span v-else class="sub-thumb-ph">{{ item.display_id || 'I' + item.id }}</span>
+            </div>
             <span class="sub-id">{{ item.display_id || 'I' + item.id }}</span>
             <span class="sub-name">{{ item.name }}</span>
             <span v-if="item.category" class="sub-meta">{{ item.category.name }}</span>
@@ -219,10 +223,16 @@ onMounted(async () => {
 .sub-list { display: flex; flex-direction: column; }
 .sub-item {
   display: flex; align-items: center; gap: 0.75rem;
-  padding: 0.625rem 0; border-bottom: 1px solid #f3f4f6; text-decoration: none; color: inherit;
+  padding: 0.5rem 0; border-bottom: 1px solid #f3f4f6; text-decoration: none; color: inherit;
   &:last-child { border-bottom: none; }
-  &:hover { background: #f9fafb; margin: 0 -1.5rem; padding: 0.625rem 1.5rem; }
+  &:hover { background: #f9fafb; margin: 0 -1.5rem; padding: 0.5rem 1.5rem; }
 }
+.sub-thumb {
+  width: 48px; height: 48px; flex-shrink: 0; border-radius: 8px;
+  overflow: hidden; background: #dbeafe; display: flex; align-items: center; justify-content: center;
+}
+.sub-thumb-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.sub-thumb-ph { font-size: 0.65rem; font-weight: 700; color: #3b82f6; }
 .sub-id { font-size: 0.75rem; font-weight: 600; color: #3b82f6; flex-shrink: 0; min-width: 36px; }
 .sub-name { flex: 1; font-size: 0.875rem; font-weight: 500; color: #111827; }
 .sub-meta { font-size: 0.75rem; color: #9ca3af; flex-shrink: 0; }

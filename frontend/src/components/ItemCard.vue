@@ -2,7 +2,7 @@
   <div class="item-card" @click="router.push(`/items/${item.id}`)" style="cursor:pointer">
     <div class="item-main">
       <div class="item-thumb">
-        <img v-if="item.cover_image" :src="item.cover_image.url" :alt="item.name" class="thumb-img">
+        <img v-if="item.image_url" :src="item.image_url" :alt="item.name" class="thumb-img">
         <span v-else class="thumb-id">{{ item.display_id || 'I' + item.id }}</span>
       </div>
       <div class="item-info">

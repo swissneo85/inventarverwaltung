@@ -29,7 +29,7 @@ class Box extends Model
         'room_id' => 'integer',
     ];
 
-    protected $appends = ['display_id', 'qr_code_url'];
+    protected $appends = ['display_id', 'qr_code_url', 'image_url'];
 
     /**
      * Sichtbare Kennung: B{id}
@@ -37,6 +37,14 @@ class Box extends Model
     public function getDisplayIdAttribute(): string
     {
         return 'B' . $this->id;
+    }
+
+    public function getImageUrlAttribute(): ?string
+    {
+        if ($this->relationLoaded('coverImage') && $this->coverImage) {
+            return $this->coverImage->url;
+        }
+        return null;
     }
 
     /**

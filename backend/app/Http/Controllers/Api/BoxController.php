@@ -42,7 +42,7 @@ class BoxController extends BaseApiController
      */
     public function inbox(Request $request)
     {
-        $boxes = Box::with(['room:id,name'])
+        $boxes = Box::with(['room:id,name', 'coverImage'])
             ->withCount('items')
             ->where('is_in_inbox', true)
             ->ordered()

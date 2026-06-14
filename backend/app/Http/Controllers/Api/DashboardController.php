@@ -61,13 +61,13 @@ class DashboardController extends BaseApiController
      */
     public function inbox(Request $request)
     {
-        $items = Item::with(['category'])
+        $items = Item::with(['category', 'coverImage'])
             ->where('is_in_inbox', true)
             ->orderBy('created_at', 'desc')
             ->limit(20)
             ->get();
 
-        $boxes = Box::with(['room'])
+        $boxes = Box::with(['room', 'coverImage'])
             ->where('is_in_inbox', true)
             ->withCount('items')
             ->orderBy('created_at', 'desc')

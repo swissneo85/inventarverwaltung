@@ -45,10 +45,8 @@
       <div v-if="viewMode === 'list'" class="list-view">
         <div v-for="room in rooms" :key="room.id" class="list-card" @click="$router.push(`/rooms/${room.id}`)" style="cursor:pointer">
           <router-link :to="`/rooms/${room.id}`" class="list-thumb" @click.stop>
-            <img v-if="room.cover_image" :src="room.cover_image.url" :alt="room.name" class="thumb-img">
-            <svg v-else xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-            </svg>
+            <img v-if="room.image_url" :src="room.image_url" :alt="room.name" class="thumb-img">
+            <span v-else class="thumb-id">R{{ room.id }}</span>
           </router-link>
           <div class="list-info">
             <router-link :to="`/rooms/${room.id}`" class="list-name" @click.stop>{{ room.name }}</router-link>
@@ -263,11 +261,12 @@ async function deleteRoom() {
   &:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
 }
 .list-thumb {
-  width: 44px; height: 44px; flex-shrink: 0; border-radius: 10px;
-  background: #fef9ec; color: #d97706; display: flex; align-items: center; justify-content: center;
+  width: 48px; height: 48px; flex-shrink: 0; border-radius: 8px;
+  background: #fef9ec; display: flex; align-items: center; justify-content: center;
   overflow: hidden; text-decoration: none;
 }
 .thumb-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.thumb-id { font-size: 0.7rem; font-weight: 700; color: #d97706; }
 .list-info { flex: 1; min-width: 0; }
 .list-name {
   font-weight: 600; font-size: 0.9rem; color: #111827; text-decoration: none; display: block;

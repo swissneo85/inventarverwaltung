@@ -39,7 +39,10 @@
       <div v-else class="items-list">
         <div v-for="item in items" :key="item.id" class="inbox-item card">
           <div class="item-info" @click="$router.push({ name: 'ItemDetail', params: { id: item.id } })" style="cursor:pointer">
-            <span class="item-id">I{{ item.id }}</span>
+            <div class="item-thumb">
+              <img v-if="item.image_url" :src="item.image_url" :alt="item.name" class="thumb-img">
+              <span v-else class="thumb-ph">{{ item.display_id || 'I' + item.id }}</span>
+            </div>
             <div class="item-details">
               <h3>{{ item.name }}</h3>
               <p v-if="item.category">{{ item.category.name }}</p>
@@ -84,7 +87,10 @@
       <div v-else class="items-list">
         <div v-for="box in inboxBoxes" :key="box.id" class="inbox-item card">
           <div class="item-info">
-            <span class="item-id box">B{{ box.id }}</span>
+            <div class="item-thumb box-thumb">
+              <img v-if="box.image_url" :src="box.image_url" :alt="box.name" class="thumb-img">
+              <span v-else class="thumb-ph">B{{ box.id }}</span>
+            </div>
             <div class="item-details">
               <h3>{{ box.name }}</h3>
               <p>{{ box.items_count || 0 }} Items</p>
@@ -299,21 +305,23 @@ async function assignBox(box) {
   flex: 1;
 }
 
-.item-id {
+.item-thumb {
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  width: 40px;
-  height: 40px;
+  width: 48px;
+  height: 48px;
   background: #dbeafe;
-  color: #1e40af;
   border-radius: 8px;
-  font-size: 0.75rem;
-  font-weight: 600;
+  overflow: hidden;
 
-  &.box { background: #dcfce7; color: #166534; }
+  &.box-thumb { background: #dcfce7; }
 }
+
+.thumb-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.thumb-ph { font-size: 0.7rem; font-weight: 700; color: #3b82f6; }
+.box-thumb .thumb-ph { color: #166534; }
 
 .item-details {
   min-width: 0;

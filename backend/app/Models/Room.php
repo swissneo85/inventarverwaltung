@@ -22,7 +22,7 @@ class Room extends Model
         'sort_order' => 'integer',
     ];
 
-    protected $appends = ['display_id'];
+    protected $appends = ['display_id', 'image_url'];
 
     /**
      * Sichtbare Kennung: R{id}
@@ -30,6 +30,14 @@ class Room extends Model
     public function getDisplayIdAttribute(): string
     {
         return 'R' . $this->id;
+    }
+
+    public function getImageUrlAttribute(): ?string
+    {
+        if ($this->relationLoaded('coverImage') && $this->coverImage) {
+            return $this->coverImage->url;
+        }
+        return null;
     }
 
     public function images()

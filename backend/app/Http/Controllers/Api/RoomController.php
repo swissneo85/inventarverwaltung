@@ -151,7 +151,7 @@ class RoomController extends BaseApiController
             return $this->error('Raum nicht gefunden', 404);
         }
 
-        $boxes = $room->boxes()->withCount('items')->ordered()->paginate($request->get('per_page', 50));
+        $boxes = $room->boxes()->with(['coverImage'])->withCount('items')->ordered()->paginate($request->get('per_page', 50));
 
         return $this->success($boxes);
     }

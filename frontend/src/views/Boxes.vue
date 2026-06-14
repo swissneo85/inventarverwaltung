@@ -60,10 +60,8 @@
       <div v-if="viewMode === 'list'" class="list-view">
         <div v-for="box in boxes" :key="box.id" class="list-card" @click="$router.push(`/boxes/${box.id}`)" style="cursor:pointer">
           <div class="list-thumb">
-            <img v-if="box.cover_image" :src="box.cover_image.url" :alt="box.name" class="thumb-img">
-            <svg v-else xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
-            </svg>
+            <img v-if="box.image_url" :src="box.image_url" :alt="box.name" class="thumb-img">
+            <span v-else class="thumb-id">B{{ box.id }}</span>
           </div>
           <div class="list-info">
             <div class="list-name">{{ box.name }}</div>
@@ -291,10 +289,11 @@ async function doDelete() {
   &:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
 }
 .list-thumb {
-  width: 44px; height: 44px; flex-shrink: 0; border-radius: 10px;
-  background: #ede9fe; color: #7c3aed; display: flex; align-items: center; justify-content: center; overflow: hidden;
+  width: 48px; height: 48px; flex-shrink: 0; border-radius: 8px;
+  background: #ede9fe; display: flex; align-items: center; justify-content: center; overflow: hidden;
 }
 .thumb-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.thumb-id { font-size: 0.7rem; font-weight: 700; color: #7c3aed; }
 .list-info { flex: 1; min-width: 0; }
 .list-name { font-weight: 600; font-size: 0.9rem; color: #111827; }
 .list-sub { font-size: 0.8rem; color: #9ca3af; }
