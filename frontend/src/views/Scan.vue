@@ -155,12 +155,27 @@ async function startCamera() {
     stream = await navigator.mediaDevices.getUserMedia({
       video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }
     })
+    cameraActive.value = true
+
+    // iOS Safari braucht mehr Zeit als nextTick um das video-Element zu mounten
+    await new Promise(resolve => setTimeout(resolve, 100))
+
+    if (!videoEl.value) {
+      cameraError.value = 'Kamera konnte nicht initialisiert werden'
+      stopCamera()
+      return
+    }
+
     videoEl.value.srcObject = stream
     await videoEl.value.play()
-    cameraActive.value = true
     scanLoop()
   } catch (err) {
-    cameraError.value = 'Kamerazugriff verweigert: ' + (err.message || err)
+    cameraActive.value = false
+    if (err.name === 'NotAllowedError') {
+      cameraError.value = 'Kamera-Zugriff verweigert — bitte in den Safari-Einstellungen erlauben'
+    } else {
+      cameraError.value = 'Kamera-Fehler: ' + (err.message || err)
+    }
   } finally {
     cameraLoading.value = false
   }
