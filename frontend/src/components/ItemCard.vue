@@ -2,7 +2,9 @@
   <div class="item-row" @click="router.push(`/items/${item.id}`)" style="cursor:pointer">
     <div class="item-thumb">
       <img v-if="item.image_url" :src="item.image_url" :alt="item.name" class="thumb-img">
-      <span v-else class="thumb-ph">{{ item.display_id || 'I' + item.id }}</span>
+      <svg v-else class="thumb-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+      </svg>
     </div>
     <span class="item-id">{{ item.display_id || 'I' + item.id }}</span>
     <span class="item-name">{{ item.name }}</span>
@@ -80,10 +82,9 @@ const locationText = computed(() => {
   display: block;
 }
 
-.thumb-ph {
-  font-size: 0.65rem;
-  font-weight: 700;
+.thumb-icon {
   color: #3b82f6;
+  opacity: 0.7;
 }
 
 .item-id {
