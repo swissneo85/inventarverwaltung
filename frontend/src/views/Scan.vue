@@ -19,20 +19,25 @@
       </div>
 
       <div v-else class="camera-container">
-        <div class="camera-wrapper">
-          <video ref="videoEl" autoplay playsinline muted class="camera-video"></video>
-          <canvas ref="canvasEl" class="camera-canvas"></canvas>
-          <div class="scan-overlay">
-            <div class="scan-frame"></div>
-          </div>
-        </div>
-        <div class="camera-controls">
-          <button v-if="!cameraActive" class="btn-primary" @click="startCamera" :disabled="cameraLoading">
-            {{ cameraLoading ? 'Wird gestartet...' : 'Kamera starten' }}
+        <!-- Kamera nicht aktiv: grosser Start-Button -->
+        <div v-if="!cameraActive" class="scanner-start">
+          <button @click="startCamera" class="btn-scan-start" :disabled="cameraLoading">
+            📷 {{ cameraLoading ? 'Wird gestartet…' : 'Kamera starten' }}
           </button>
-          <button v-else class="btn-secondary" @click="stopCamera">Kamera stoppen</button>
         </div>
+
+        <!-- Kamera aktiv: Video + Stop-Button -->
+        <div v-else class="scanner-active">
+          <video ref="videoEl" autoplay playsinline muted class="scanner-video"></video>
+          <canvas ref="canvasEl" class="camera-canvas"></canvas>
+          <div class="scanner-overlay">
+            <div class="scanner-frame"></div>
+          </div>
+          <button @click="stopCamera" class="btn-scan-stop">✕ Stoppen</button>
+        </div>
+
         <div v-if="cameraError" class="camera-error">{{ cameraError }}</div>
+        <div v-if="scanError" class="camera-error">{{ scanError }}</div>
       </div>
     </div>
 
@@ -41,7 +46,7 @@
       <h2>Manuelle Eingabe</h2>
       <p>Geben Sie die ID ein (z.B. I123, B45, R12)</p>
 
-      <form @submit.prevent="handleScan" class="scan-form">
+      <form @submit.prevent="handleScan(scanCode)" class="scan-form">
         <div class="form-group">
           <input
             v-model="scanCode"
@@ -51,10 +56,7 @@
             @keydown.enter.prevent="handleScan"
           />
         </div>
-        <button type="submit" class="btn-primary" :disabled="loading || !scanCode">
-          <span v-if="loading">Suchen...</span>
-          <span v-else>Suchen</span>
-        </button>
+        <button type="submit" class="btn-primary" :disabled="!scanCode">Suchen</button>
       </form>
     </div>
 
@@ -107,17 +109,14 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import api from '@/services/api'
-import { useToast } from 'vue-toastification'
 import jsQR from 'jsqr'
 
 const router = useRouter()
 const route = useRoute()
-const toast = useToast()
 
 const scanCode = ref('')
-const loading = ref(false)
 const result = ref(null)
+const scanError = ref('')
 const recentScans = ref([])
 
 const videoEl = ref(null)
@@ -198,76 +197,45 @@ function scanLoop() {
 
 async function handleQrResult(data) {
   scanCode.value = data
-  await handleScan()
+  await handleScan(data)
   setTimeout(() => { lastScanned = '' }, 3000)
 }
 
-async function handleScan() {
-  if (!scanCode.value) return
+async function handleScan(data) {
+  const trimmed = (data ?? scanCode.value ?? '').trim()
+  if (!trimmed) return
 
-  loading.value = true
-  result.value = null
+  scanError.value = ''
 
+  // Format: I1, I23, i1 etc.
+  const itemMatch = trimmed.match(/^[Ii](\d+)$/)
+  if (itemMatch) {
+    router.push({ name: 'ItemDetail', params: { id: itemMatch[1] } })
+    return
+  }
+
+  // Format: B1, B23 etc.
+  const boxMatch = trimmed.match(/^[Bb](\d+)$/)
+  if (boxMatch) {
+    router.push({ name: 'BoxDetail', params: { id: boxMatch[1] } })
+    return
+  }
+
+  // Format: R1, R23 etc.
+  const roomMatch = trimmed.match(/^[Rr](\d+)$/)
+  if (roomMatch) {
+    router.push({ name: 'RoomDetail', params: { id: roomMatch[1] } })
+    return
+  }
+
+  // URL Format: https://inventar.buettler.org/items/1
   try {
-    const displayMatch = scanCode.value.trim().match(/^([RBI])(\d+)$/i)
+    const url = new URL(trimmed)
+    router.push(url.pathname)
+    return
+  } catch {}
 
-    if (displayMatch) {
-      const type = displayMatch[1].toUpperCase()
-      const id = displayMatch[2]
-      await handleDisplayId(type, id)
-    } else {
-      const pathMatch = scanCode.value.match(/\/(rooms|boxes|items)\/(\d+)/)
-      if (pathMatch) {
-        const typeMap = { rooms: 'R', boxes: 'B', items: 'I' }
-        await handleDisplayId(typeMap[pathMatch[1]], pathMatch[2])
-      } else {
-        const response = await api.post('/scan', { token: scanCode.value })
-        result.value = formatResult(response.data.data)
-        addToRecent(result.value)
-      }
-    }
-  } catch {
-    toast.error('Nicht gefunden')
-  } finally {
-    loading.value = false
-  }
-}
-
-async function handleDisplayId(type, id) {
-  let response
-
-  if (type === 'I') {
-    response = await api.get(`/items/${id}`)
-    result.value = { type: 'Gegenstand', display_id: `I${id}`, data: response.data.data, url: `/items/${id}`, editUrl: `/items/${id}/edit` }
-  } else if (type === 'B') {
-    response = await api.get(`/boxes/${id}`)
-    result.value = { type: 'Box', display_id: `B${id}`, data: response.data.data, url: `/boxes/${id}`, editUrl: `/boxes/${id}` }
-  } else if (type === 'R') {
-    response = await api.get(`/rooms/${id}`)
-    result.value = { type: 'Raum', display_id: `R${id}`, data: response.data.data, url: `/rooms/${id}`, editUrl: `/rooms/${id}` }
-  }
-
-  if (result.value) {
-    result.value.name = result.value.data.name
-    addToRecent(result.value)
-  }
-}
-
-function formatResult(data) {
-  const typeMap = {
-    item: { type: 'Gegenstand', prefix: 'I' },
-    box: { type: 'Box', prefix: 'B' },
-    room: { type: 'Raum', prefix: 'R' },
-  }
-  const { type, prefix } = typeMap[data.type] || { type: 'Unbekannt', prefix: '' }
-  return {
-    type,
-    display_id: `${prefix}${data.data.id}`,
-    name: data.data.name,
-    data: data.data,
-    url: `/${data.type === 'item' ? 'items' : data.type === 'box' ? 'boxes' : 'rooms'}/${data.data.id}`,
-    editUrl: `/${data.type === 'item' ? 'items' : data.type === 'box' ? 'boxes' : 'rooms'}/${data.data.id}/edit`,
-  }
+  scanError.value = 'Unbekannter QR-Code: ' + trimmed
 }
 
 function addToRecent(item) {
@@ -316,7 +284,29 @@ function goToItem(scan) {
 /* Camera */
 .camera-container { display: flex; flex-direction: column; gap: 1rem; }
 
-.camera-wrapper {
+.scanner-start {
+  padding: 0.5rem 0;
+}
+
+.btn-scan-start {
+  width: 100%;
+  padding: 1.25rem;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 0.75rem;
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+
+  &:disabled { opacity: 0.6; cursor: not-allowed; }
+  &:hover:not(:disabled) { background: #2563eb; }
+}
+
+.scanner-active {
   position: relative;
   width: 100%;
   background: #000;
@@ -325,7 +315,7 @@ function goToItem(scan) {
   aspect-ratio: 4/3;
 }
 
-.camera-video {
+.scanner-video {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -341,7 +331,7 @@ function goToItem(scan) {
   pointer-events: none;
 }
 
-.scan-overlay {
+.scanner-overlay {
   position: absolute;
   inset: 0;
   display: flex;
@@ -350,7 +340,7 @@ function goToItem(scan) {
   background: rgba(0,0,0,0.4);
 }
 
-.scan-frame {
+.scanner-frame {
   width: 60%;
   aspect-ratio: 1;
   border: 3px solid #22c55e;
@@ -358,7 +348,20 @@ function goToItem(scan) {
   box-shadow: 0 0 0 9999px rgba(0,0,0,0.4);
 }
 
-.camera-controls { display: flex; justify-content: center; }
+.btn-scan-stop {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  padding: 0.4rem 1rem;
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+
+  &:hover { background: #dc2626; }
+}
 
 .camera-error {
   color: #dc2626;
