@@ -145,8 +145,8 @@ class SearchController extends BaseApiController
         $term = $request->q;
         $results = [];
 
-        // Items (nur Name und ID)
-        $items = Item::where('name', 'like', "{$term}%")
+        // Items (Name, Beschreibung, Seriennummer, Modell, Hersteller)
+        $items = Item::search($term)
             ->limit(10)
             ->get(['id', 'name'])
             ->map(function ($item) {
@@ -158,8 +158,11 @@ class SearchController extends BaseApiController
                 ];
             });
 
-        // Boxen
-        $boxes = Box::where('name', 'like', "{$term}%")
+        // Boxen (Name + Beschreibung)
+        $boxes = Box::where(function ($q) use ($term) {
+                $q->where('name', 'like', "%{$term}%")
+                  ->orWhere('description', 'like', "%{$term}%");
+            })
             ->limit(5)
             ->get(['id', 'name'])
             ->map(function ($box) {
@@ -171,8 +174,11 @@ class SearchController extends BaseApiController
                 ];
             });
 
-        // Räume
-        $rooms = Room::where('name', 'like', "{$term}%")
+        // Räume (Name + Beschreibung)
+        $rooms = Room::where(function ($q) use ($term) {
+                $q->where('name', 'like', "%{$term}%")
+                  ->orWhere('description', 'like', "%{$term}%");
+            })
             ->limit(5)
             ->get(['id', 'name'])
             ->map(function ($room) {
