@@ -1,14 +1,16 @@
 <template>
   <div class="page">
     <div class="page-header">
-      <button class="btn btn-secondary btn-back" @click="$router.push({ name: 'Items' })">← Zurück</button>
+      <div class="header-row">
+        <button class="btn btn-secondary btn-back" @click="$router.push({ name: 'Items' })">← Zurück</button>
+        <div class="header-actions" v-if="item && canEdit">
+          <button class="btn btn-primary" @click="$router.push({ name: 'ItemEdit', params: { id: item.id } })">
+            Bearbeiten
+          </button>
+        </div>
+      </div>
       <h1 v-if="item">{{ item.display_id }} – {{ item.name }}</h1>
       <h1 v-else-if="!loading">Gegenstand</h1>
-      <div class="header-actions" v-if="item && canEdit">
-        <button class="btn btn-primary" @click="$router.push({ name: 'ItemEdit', params: { id: item.id } })">
-          Bearbeiten
-        </button>
-      </div>
     </div>
 
     <div v-if="loading" class="loading">Wird geladen...</div>
@@ -130,18 +132,21 @@ onMounted(loadItem)
 .page { max-width: 800px; margin: 0 auto; }
 
 .page-header {
+  margin-bottom: 1.5rem;
+}
+
+.header-row {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 1rem;
-  margin-bottom: 1.5rem;
-  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
 }
 
 .page-header h1 {
   font-size: 1.5rem;
   font-weight: 600;
   margin: 0;
-  flex: 1;
 }
 
 .btn-back { flex-shrink: 0; }
@@ -183,7 +188,6 @@ onMounted(loadItem)
 
 @media (max-width: 767px) {
   .detail-card { padding: 1rem; }
-  .page-header { flex-wrap: nowrap; }
   .page-header h1 { font-size: 1.1rem; }
 }
 </style>

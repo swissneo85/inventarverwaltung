@@ -1,11 +1,13 @@
 <template>
   <div class="page">
     <div class="page-header">
-      <button class="btn btn-secondary btn-back" @click="$router.push({ name: 'Boxes' })">← Zurück</button>
-      <h1 v-if="box">{{ box.name }}</h1>
-      <div class="header-actions" v-if="box && canEdit">
-        <router-link :to="`/boxes/${box.id}/edit`" class="btn btn-primary">Bearbeiten</router-link>
+      <div class="header-row">
+        <button class="btn btn-secondary btn-back" @click="$router.push({ name: 'Boxes' })">← Zurück</button>
+        <div class="header-actions" v-if="box && canEdit">
+          <router-link :to="`/boxes/${box.id}/edit`" class="btn btn-primary">Bearbeiten</router-link>
+        </div>
       </div>
+      <h1 v-if="box">{{ box.name }}</h1>
     </div>
 
     <div v-if="loading" class="loading">Wird geladen...</div>
@@ -89,9 +91,12 @@ onMounted(async () => {
 .page { max-width: 800px; margin: 0 auto; }
 
 .page-header {
-  display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap;
+  margin-bottom: 1.5rem;
 }
-.page-header h1 { font-size: 1.5rem; font-weight: 600; margin: 0; flex: 1; }
+.header-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 0.5rem;
+}
+.page-header h1 { font-size: 1.5rem; font-weight: 600; margin: 0; }
 .btn-back { flex-shrink: 0; }
 .header-actions { flex-shrink: 0; }
 
