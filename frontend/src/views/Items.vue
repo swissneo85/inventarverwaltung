@@ -105,7 +105,7 @@
     </div>
     
     <!-- List View -->
-    <div v-else-if="viewMode === 'list'" class="items-list">
+    <div v-else-if="viewMode === 'list'" class="items-list-card">
       <ItemCard v-for="item in items" :key="item.id" :item="item" />
     </div>
 
@@ -478,10 +478,11 @@ function conditionClass(condition) {
   }
 }
 
-.items-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
+.items-list-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  overflow: hidden;
 }
 
 .items-gallery {
