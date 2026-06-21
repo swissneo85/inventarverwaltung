@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\ImageController;
 use App\Http\Controllers\Api\ItemDocumentController;
 use App\Http\Controllers\Api\UserCategoryPermissionController;
+use App\Http\Controllers\Admin\BackupController;
 
 /*
 |--------------------------------------------------------------------------
@@ -169,5 +170,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/logs/login', [LoginLogController::class, 'index']);
         Route::get('/logs/login/failed', [LoginLogController::class, 'failed']);
         Route::get('/logs/login/stats', [LoginLogController::class, 'stats']);
+
+        // Backup & Wiederherstellung
+        Route::post('/admin/backup/create', [BackupController::class, 'create']);
+        Route::post('/admin/backup/preview', [BackupController::class, 'preview']);
+        Route::post('/admin/backup/restore', [BackupController::class, 'restore']);
     });
 });

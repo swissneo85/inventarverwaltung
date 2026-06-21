@@ -9,8 +9,8 @@ FROM php:8.4-fpm-alpine
 ARG APP_VERSION=dev
 
 # Install dependencies
-RUN apk add --no-cache nginx sqlite sqlite-dev curl supervisor nodejs npm git unzip \
-    && docker-php-ext-install pdo_sqlite pdo_mysql
+RUN apk add --no-cache nginx sqlite sqlite-dev curl supervisor nodejs npm git unzip zip libzip-dev \
+    && docker-php-ext-install pdo_sqlite pdo_mysql zip
 
 # Install Composer
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
@@ -62,6 +62,7 @@ RUN ln -s /var/www/html/routes /var/www/html/public/routes \
 
 # Copy configs
 COPY docker/nginx.conf /etc/nginx/http.d/default.conf
+COPY docker/php-upload.ini /usr/local/etc/php/conf.d/upload.ini
 COPY docker/supervisor.conf /etc/supervisord.conf
 COPY docker/start.sh /start.sh
 RUN chmod +x /start.sh
