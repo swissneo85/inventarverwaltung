@@ -1,0 +1,29 @@
+services:
+  inventarverwaltung:
+    image: ghcr.io/swissneo85/inventarverwaltung_alt:hostinger
+    container_name: inventarverwaltung
+    restart: unless-stopped
+    volumes:
+      - ./data:/app/data
+      - ./storage:/var/www/html/storage
+    environment:
+      - APP_KEY=<HIER_ECHTEN_KEY_AUS_HOSTINGER_EINTRAGEN>
+      - APP_NAME=Inventarverwaltung
+      - APP_ENV=production
+      - APP_DEBUG=false
+      - APP_URL=https://inventar.buettler.org
+      - DB_CONNECTION=sqlite
+      - DB_DATABASE=/app/data/database.sqlite
+      - SESSION_DRIVER=file
+      - SESSION_LIFETIME=120
+      - CACHE_DRIVER=file
+      - QUEUE_CONNECTION=sync
+      - LOG_CHANNEL=errorlog
+      - LOG_LEVEL=warning
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.inventar.rule=Host(`inventar.buettler.org`)"
+      - "traefik.http.routers.inventar.entrypoints=websecure"
+      - "traefik.http.routers.inventar.tls=true"
+      - "traefik.http.routers.inventar.tls.certresolver=letsencrypt"
+      - "traefik.http.services.inventar.loadbalancer.server.port=80"
