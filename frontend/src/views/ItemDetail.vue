@@ -49,13 +49,16 @@
         <div class="detail-row"><span>Ort</span><span>{{ locationText }}</span></div>
       </div>
 
-      <div class="card detail-card" v-if="item.purchase_price || item.purchased_at || item.warranty_until">
+      <div class="card detail-card" v-if="item.purchase_price || item.purchased_at || item.warranty_until || item.purchase_location">
         <h2>Kauf &amp; Garantie</h2>
         <div v-if="item.purchase_price" class="detail-row">
           <span>Kaufpreis</span><span>CHF {{ Number(item.purchase_price).toFixed(2) }}</span>
         </div>
         <div v-if="item.purchased_at" class="detail-row">
           <span>Kaufdatum</span><span>{{ formatDate(item.purchased_at) }}</span>
+        </div>
+        <div v-if="item.purchase_location" class="detail-row">
+          <span>Kaufort</span><span>{{ item.purchase_location }}</span>
         </div>
         <div v-if="item.warranty_until" class="detail-row">
           <span>Garantie bis</span><span>{{ formatDate(item.warranty_until) }}</span>
