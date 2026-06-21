@@ -100,6 +100,28 @@ class ItemController extends BaseApiController
     }
 
     /**
+     * Distinct-Werte für Autocomplete (Whitelist-geprüft)
+     */
+    public function fieldSuggestions(Request $request)
+    {
+        $allowed = ['brand', 'model', 'purchase_location'];
+        $field = $request->get('field');
+
+        if (!in_array($field, $allowed, true)) {
+            return $this->error('Ungültiges Feld', 422);
+        }
+
+        $values = Item::whereNotNull($field)
+            ->where($field, '!=', '')
+            ->distinct()
+            ->orderBy($field)
+            ->pluck($field)
+            ->values();
+
+        return $this->success($values);
+    }
+
+    /**
      * Inbox-Items auflisten
      */
     public function inbox(Request $request)

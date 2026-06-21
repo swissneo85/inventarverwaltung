@@ -306,7 +306,8 @@ class Item extends Model
                 ->orWhere('ean', 'like', $term)
                 ->orWhere('inventory_number', 'like', $term)
                 ->orWhere('brand', 'like', $term)
-                ->orWhere('model', 'like', $term);
+                ->orWhere('model', 'like', $term)
+                ->orWhere('purchase_location', 'like', $term);
         });
     }
 }

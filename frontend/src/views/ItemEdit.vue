@@ -110,11 +110,11 @@
           <div class="form-row">
             <div class="form-group">
               <label>Marke</label>
-              <input v-model="form.brand" type="text" placeholder="z.B. Apple">
+              <AutocompleteInput v-model="form.brand" field="brand" placeholder="z.B. Apple" />
             </div>
             <div class="form-group">
               <label>Modell</label>
-              <input v-model="form.model" type="text" placeholder="z.B. MacBook Pro">
+              <AutocompleteInput v-model="form.model" field="model" placeholder="z.B. MacBook Pro" />
             </div>
           </div>
 
@@ -174,6 +174,12 @@
               <label>Kaufdatum</label>
               <input v-model="form.purchased_at" type="date">
             </div>
+          </div>
+
+          <!-- Kaufort -->
+          <div class="form-group">
+            <label>Kaufort</label>
+            <AutocompleteInput v-model="form.purchase_location" field="purchase_location" placeholder="z.B. MediaMarkt, Amazon…" />
           </div>
 
           <!-- Garantie -->
@@ -243,6 +249,7 @@ import { useToast } from 'vue-toastification'
 import ImageGallery from '@/components/ImageGallery.vue'
 import SearchableSelect from '@/components/SearchableSelect.vue'
 import DocumentGallery from '@/components/DocumentGallery.vue'
+import AutocompleteInput from '@/components/AutocompleteInput.vue'
 import { useAuthStore } from '@/stores/auth'
 
 const route = useRoute()
@@ -324,6 +331,7 @@ const form = ref({
   purchase_price: '',
   purchased_at: '',
   warranty_until: '',
+  purchase_location: '',
 })
 
 async function loadDocuments() {
@@ -373,6 +381,7 @@ onMounted(async () => {
         purchase_price: item.purchase_price ?? '',
         purchased_at: item.purchased_at ? item.purchased_at.substring(0, 10) : '',
         warranty_until: item.warranty_until ? item.warranty_until.substring(0, 10) : '',
+        purchase_location: item.purchase_location ?? '',
       }
       // Ensure assigned persons (possibly inactive) appear in the dropdown
       const knownIds = new Set(persons.value.map(p => p.id))
