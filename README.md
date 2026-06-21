@@ -5,35 +5,44 @@ Webbasierte Inventarverwaltung mit Vue.js Frontend und Laravel Backend.
 
 ---
 
-## 🚀 Schnellstart für Hostinger VPS
+## Deployment-Konfiguration
 
-### 1. Verbinde dich per SSH mit deinem Server
+**Massgebliche Datei für das Hostinger-Deployment: [`deploy/docker-compose.yml`](deploy/docker-compose.yml)**
 
-### 2. Erstelle einen Ordner und wechsle hinein
+Diese Datei enthält die vollständige Konfiguration für `inventar.buettler.org` (Traefik,
+Bind-Mounts, kein direktes Port-Mapping). Sie dient als Referenz falls die Konfiguration
+im Hostinger-Panel verloren geht. Den echten `APP_KEY` nicht ins Repo committen – er
+gehört ausschliesslich ins Hostinger-Panel.
+
+Weitere Details zum Deployment: [`deploy/README.md`](deploy/README.md)
+
+---
+
+## Self-Hosting auf einem eigenen Server
+
+Wer die App auf einem eigenen Server ohne Traefik betreiben möchte, findet eine
+Vorlage in [`docker-compose.example.yml`](docker-compose.example.yml).
+
+### Kurzanleitung
 
 ```bash
+# 1. Verzeichnis anlegen
 mkdir inventarverwaltung && cd inventarverwaltung
-```
 
-### 3. Fertige `docker-compose.yml` herunterladen
+# 2. Vorlage herunterladen
+curl -sL https://raw.githubusercontent.com/swissneo85/inventarverwaltung/main/docker-compose.example.yml -o docker-compose.yml
 
-```bash
-curl -sL https://raw.githubusercontent.com/swissneo85/inventarverwaltung/main/docker-compose.hostinger.yml -o docker-compose.yml
-```
+# 3. APP_KEY generieren und in docker-compose.yml eintragen
+openssl rand -base64 32
 
-### 4. Ordner für Daten anlegen
-
-```bash
+# 4. Ordner für persistente Daten anlegen
 mkdir -p data storage
-```
 
-### 5. Container starten
-
-```bash
+# 5. Container starten
 docker compose up -d
 ```
 
-### 6. Zugriff
+### Zugriff
 
 - **URL:** `http://DEINE-SERVER-IP:3004`
 - **Login:** `admin` / `admin123`
@@ -42,44 +51,7 @@ docker compose up -d
 
 ---
 
-## 📋 Fertige docker-compose.yml
-
-Falls du die Datei manuell erstellen willst, hier der komplette Inhalt:
-
-```yaml
-# ============================================
-# Inventarverwaltung - Fertige Hostinger YAML
-# ============================================
-
-services:
-  inventarverwaltung:
-    image: ghcr.io/swissneo85/inventarverwaltung:hostinger
-    container_name: inventarverwaltung
-    restart: unless-stopped
-    ports:
-      - "3004:80"
-    volumes:
-      - ./data:/app/data
-      - ./storage:/var/www/html/storage
-    environment:
-      - APP_KEY=base64:6r/rs5zrUT4/4KV/4CungM+tqTL11u/4Wg2v7iMA1x8=
-      - APP_NAME=Inventarverwaltung
-      - APP_ENV=production
-      - APP_DEBUG=false
-      - APP_URL=http://localhost:3004
-      - DB_CONNECTION=sqlite
-      - DB_DATABASE=/app/data/database.sqlite
-      - SESSION_DRIVER=file
-      - SESSION_LIFETIME=120
-      - CACHE_DRIVER=file
-      - QUEUE_CONNECTION=sync
-      - LOG_CHANNEL=errorlog
-      - LOG_LEVEL=warning
-```
-
----
-
-## 🔄 Update
+## Update
 
 ```bash
 cd inventarverwaltung
@@ -89,19 +61,20 @@ docker compose up -d
 
 ---
 
-## 🐳 Docker Image
+## Docker Image
 
 ```
+ghcr.io/swissneo85/inventarverwaltung:latest
 ghcr.io/swissneo85/inventarverwaltung:hostinger
 ```
 
 ---
 
-## 🔧 Umgebungsvariablen
+## Umgebungsvariablen
 
 | Variable | Standard | Beschreibung |
 |----------|----------|--------------|
-| `APP_KEY` | *automatisch* | Laravel App-Key (base64) |
+| `APP_KEY` | *pflichtfeld* | Laravel App-Key (base64) |
 | `APP_URL` | `http://localhost:3004` | Deine Server-URL |
 | `PORT` | `3004` | Externer Port |
 | `DB_CONNECTION` | `sqlite` | SQLite (kein MySQL nötig) |
@@ -109,6 +82,6 @@ ghcr.io/swissneo85/inventarverwaltung:hostinger
 
 ---
 
-## 📄 Lizenz
+## Lizenz
 
 MIT
