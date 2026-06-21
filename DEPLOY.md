@@ -1,193 +1,74 @@
-# Deployment für Hostinger / VPS
+# Deployment – Hostinger
 
-## 📦 Schnellstart
+Die massgebliche Compose-Datei für das Hostinger-Deployment ist:
 
-### 1. Repository auf Server klonen
-
-```bash
-# SSH auf deinen Server
-ssh user@your-server
-
-# In Docker-Verzeichnis wechseln
-cd /opt  # oder wo du Docker-Apps hast
-
-# Repository klonen
-git clone https://github.com/swissneo85/inventarverwaltung.git
-cd inventarverwaltung
+```
+deploy/docker-compose.yml
 ```
 
-### 2. Konfiguration
+Weitere Informationen zum Hostinger-spezifischen Setup (Bind-Mounts, Backup,
+APP_KEY) findest du in [`deploy/README.md`](deploy/README.md).
+
+---
+
+## Hostinger-Setup (Docker-Panel)
+
+1. Im Hostinger Docker-Panel ein neues Projekt erstellen
+2. Den Inhalt von `deploy/docker-compose.yml` in das Panel einfügen
+3. Den Platzhalter `<HIER_ECHTEN_KEY_AUS_HOSTINGER_EINTRAGEN>` durch einen
+   generierten APP_KEY ersetzen (`openssl rand -base64 32`)
+4. Die Bind-Mount-Ordner `data/` und `storage/` einmalig anlegen
+5. Container starten – die Datenbank wird beim ersten Start automatisch angelegt
+
+---
+
+## Self-Hosting auf eigenem Server
+
+Für den Betrieb auf einem eigenen Server ohne Traefik:
 
 ```bash
-# .env erstellen
-cp .env.production .env
+# Vorlage als docker-compose.yml kopieren
+cp docker-compose.example.yml docker-compose.yml
 
-# WICHTIG: Passwörter ändern!
-nano .env
-
-# Mindestens diese Werte ändern:
-# - APP_URL (deine Domain)
-# - FRONTEND_URL (deine Domain)  
-# - DB_PASSWORD (sicheres Passwort)
-# - DB_ROOT_PASSWORD (sicheres Passwort)
-# - APP_KEY generieren (siehe unten)
-```
-
-### 3. APP_KEY generieren
-
-```bash
-# Option A: Mit OpenSSL
+# APP_KEY setzen (in docker-compose.yml eintragen oder via .env)
 openssl rand -base64 32
 
-# Option B: Nach dem ersten Start im Container
-docker-compose -f docker-compose.prod.yml exec backend php artisan key:generate
-```
+# Persistente Verzeichnisse anlegen
+mkdir -p data storage
 
-### 4. Frontend bauen
-
-```bash
-# Node.js installieren falls nicht vorhanden
-# Auf Ubuntu/Debian:
-apt update && apt install -y nodejs npm
-
-# In Frontend-Verzeichnis
-cd frontend
-npm install
-npm run build
-
-# Zurück
-cd ..
-```
-
-### 5. Backend-Dependencies installieren
-
-```bash
-# Composer installieren falls nicht vorhanden
-apt install -y composer
-
-# Im Backend-Verzeichnis
-cd backend
-composer install --no-dev --optimize-autoloader
-cd ..
-```
-
-### 6. Container starten
-
-```bash
-# Mit docker-compose.prod.yml
-docker-compose -f docker-compose.prod.yml up -d
-
-# Datenbank initialisieren
-docker-compose -f docker-compose.prod.yml exec db mariadb -u root -p${DB_ROOT_PASSWORD} -e "CREATE DATABASE IF NOT EXISTS inventar;"
-docker-compose -f docker-compose.prod.yml exec backend php artisan migrate --force
-docker-compose -f docker-compose.prod.yml exec backend php artisan db:seed --force
+# Starten
+docker compose up -d
 ```
 
 ---
 
-## 🚀 Alternativ: One-Liner Setup
+## Docker-Befehle (Alltag)
 
 ```bash
-git clone https://github.com/swissneo85/inventarverwaltung.git \
-&& cd inventarverwaltung \
-&& cp .env.production .env \
-&& nano .env  # Passwörter ändern!
-&& cd frontend && npm install && npm run build && cd .. \
-&& cd backend && composer install --no-dev && cd .. \
-&& docker-compose -f docker-compose.prod.yml up -d \
-&& docker-compose -f docker-compose.prod.yml exec backend php artisan key:generate --force \
-&& docker-compose -f docker-compose.prod.yml exec backend php artisan migrate --force \
-&& docker-compose -f docker-compose.prod.yml exec backend php artisan db:seed --force
-```
+# Logs ansehen
+docker compose logs -f
 
----
-
-## 🔧 Docker Befehle
-
-```bash
-# Container starten
-docker-compose -f docker-compose.prod.yml up -d
-
-# Logs anzeigen
-docker-compose -f docker-compose.prod.yml logs -f
+# Container neustarten
+docker compose restart
 
 # Container stoppen
-docker-compose -f docker-compose.prod.yml down
+docker compose down
 
-# Container neu bauen
-docker-compose -f docker-compose.prod.yml build --no-cache
-
-# In Backend-Container
-docker-compose -f docker-compose.prod.yml exec backend sh
-
-# In Datenbank-Container
-docker-compose -f docker-compose.prod.yml exec db mariadb -u inventar -p
+# Update auf neues Image
+docker compose pull && docker compose up -d
 ```
 
 ---
 
-## 🌐 SSL mit Let's Encrypt (optional)
+## Backup & Restore
 
-```bash
-# Certbot installieren
-apt install -y certbot
+Die App enthält eine eingebaute Backup/Restore-Funktion (Einstellungen →
+Backup & Wiederherstellung, nur für Admins). Damit lässt sich ein vollständiges
+Backup als ZIP herunterladen und auf einer neuen Instanz wiederherstellen.
 
-# Zertifikat erstellen (Port 80 muss frei sein)
-certbot certonly --standalone -d deine-domain.com
+Die persistenten Daten liegen in den Bind-Mount-Ordnern:
 
-# Zertifikate kopieren
-cp /etc/letsencrypt/live/deine-domain.com/fullchain.pem nginx/ssl/cert.pem
-cp /etc/letsencrypt/live/deine-domain.com/privkey.pem nginx/ssl/key.pem
-
-# Nginx config für HTTPS anpassen
-nano nginx/nginx.conf
-```
-
----
-
-## ✅ Nach dem Deployment
-
-1. **Login testen:** `http://deine-domain.com` → admin / admin123
-2. **Passwort ändern:** Sofort das Admin-Passwort ändern!
-3. **Backup einrichten:** Datenbank regelmäßig sichern
-
-```bash
-# Datenbank-Backup
-docker-compose -f docker-compose.prod.yml exec db mysqldump -u root -p${DB_ROOT_PASSWORD} inventar > backup_$(date +%Y%m%d).sql
-```
-
----
-
-## 🐛 Probleme?
-
-### Container startet nicht
-
-```bash
-# Logs prüfen
-docker-compose -f docker-compose.prod.yml logs backend
-docker-compose -f docker-compose.prod.yml logs nginx
-
-# Rechte prüfen
-chmod -R 775 backend/storage
-chmod -R 775 backend/bootstrap/cache
-```
-
-### Datenbank-Verbindungsfehler
-
-```bash
-# Prüfen ob DB läuft
-docker-compose -f docker-compose.prod.yml ps
-
-# DB neustarten
-docker-compose -f docker-compose.prod.yml restart db
-```
-
-### Frontend zeigt nichts
-
-```bash
-# Prüfen ob dist existiert
-ls -la frontend/dist/
-
-# Neu bauen
-cd frontend && npm run build && cd ..
-```
+| Pfad im Container            | Lokaler Pfad | Inhalt                          |
+|------------------------------|--------------|----------------------------------|
+| `/app/data/database.sqlite`  | `./data/`    | Datenbank                        |
+| `/var/www/html/storage`      | `./storage/` | Bilder, Dokumente, Sessions      |
