@@ -200,7 +200,7 @@ class BackupController extends BaseApiController
             mkdir($tmpExtract, 0755, true);
             $zip->extractTo($tmpExtract, [$sqliteEntry]);
             copy($tmpExtract . '/' . $sqliteEntry, $dbPath);
-            chmod($dbPath, 0666);
+            @chmod($dbPath, 0666);
             $this->rmdirRecursive($tmpExtract);
 
             // Replace storage
@@ -252,7 +252,7 @@ class BackupController extends BaseApiController
                         if (str_ends_with($name, '.sqlite')) {
                             $rb->extractTo($tmpRb, [$name]);
                             copy($tmpRb . '/' . $name, $dbPath);
-                            chmod($dbPath, 0666);
+                            @chmod($dbPath, 0666);
                             break;
                         }
                     }
