@@ -1,5 +1,32 @@
 # Deployment – Hostinger
 
+## Releases & Tags (CI/CD)
+
+Ein Git-Tag löst automatisch einen GitHub-Actions-Build aus und veröffentlicht
+ein neues Docker-Image auf `ghcr.io`.
+
+**Erwartetes Tag-Format:** `v1.0.4` oder `V1.0.4` (mit oder ohne Grossbuchstaben-V,
+gefolgt von einer Zahl). Beides funktioniert.
+
+**Empfehlung:** Konsistent Kleinbuchstaben verwenden — `v1.0.4`.
+
+```bash
+# Neuen Release-Tag erstellen und pushen
+git tag v1.0.5
+git push origin v1.0.5
+```
+
+Danach erscheint unter «Actions» ein neuer Workflow-Lauf «Build and Push Docker Image»
+mit dem Trigger `push` / Tag. Das neue Image wird als `:latest` und `:hostinger`
+veröffentlicht.
+
+> **Hinweis:** Tags mit grossem `V` (z.B. `V1.0.3`, `V1.0.4`) haben in der
+> Vergangenheit keinen Build ausgelöst, weil das Trigger-Pattern `v*` nur
+> Kleinbuchstaben matched. Der Trigger akzeptiert ab sofort beide Varianten
+> (`v[0-9]*` und `V[0-9]*`).
+
+---
+
 Die massgebliche Compose-Datei für das Hostinger-Deployment ist:
 
 ```
