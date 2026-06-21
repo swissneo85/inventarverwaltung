@@ -13,7 +13,7 @@ class CategoryController extends BaseApiController
      */
     public function index(Request $request)
     {
-        $query = Category::with('children');
+        $query = Category::with('children')->withCount('items');
         
         if ($request->has('active')) {
             $query->where('active', $request->boolean('active'));
