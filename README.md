@@ -18,7 +18,7 @@ mkdir inventarverwaltung && cd inventarverwaltung
 ### 3. Fertige `docker-compose.yml` herunterladen
 
 ```bash
-curl -sL https://raw.githubusercontent.com/swissneo85/inventarverwaltung_alt/main/docker-compose.hostinger.yml -o docker-compose.yml
+curl -sL https://raw.githubusercontent.com/swissneo85/inventarverwaltung/main/docker-compose.hostinger.yml -o docker-compose.yml
 ```
 
 ### 4. Ordner für Daten anlegen
@@ -53,7 +53,7 @@ Falls du die Datei manuell erstellen willst, hier der komplette Inhalt:
 
 services:
   inventarverwaltung:
-    image: ghcr.io/swissneo85/inventarverwaltung_alt:hostinger
+    image: ghcr.io/swissneo85/inventarverwaltung:hostinger
     container_name: inventarverwaltung
     restart: unless-stopped
     ports:
@@ -92,7 +92,7 @@ docker compose up -d
 ## 🐳 Docker Image
 
 ```
-ghcr.io/swissneo85/inventarverwaltung_alt:hostinger
+ghcr.io/swissneo85/inventarverwaltung:hostinger
 ```
 
 ---

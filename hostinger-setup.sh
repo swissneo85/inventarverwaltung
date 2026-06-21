@@ -35,7 +35,7 @@ fi
 # docker-compose.yml herunterladen, falls nicht vorhanden
 if [ ! -f "docker-compose.yml" ]; then
     echo "⬇️  Lade docker-compose.yml..."
-    curl -sL https://raw.githubusercontent.com/swissneo85/inventarverwaltung_alt/main/docker-compose.hostinger.yml -o docker-compose.yml || {
+    curl -sL https://raw.githubusercontent.com/swissneo85/inventarverwaltung/main/docker-compose.hostinger.yml -o docker-compose.yml || {
         echo "   ⚠️  Konnte docker-compose.yml nicht automatisch laden."
         echo "   Bitte kopiere die Datei manuell: docker-compose.hostinger.yml → docker-compose.yml"
     }

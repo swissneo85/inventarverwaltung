@@ -1,6 +1,6 @@
 services:
   inventarverwaltung:
-    image: ghcr.io/swissneo85/inventarverwaltung_alt:hostinger
+    image: ghcr.io/swissneo85/inventarverwaltung:hostinger
     container_name: inventarverwaltung
     restart: unless-stopped
     volumes:
