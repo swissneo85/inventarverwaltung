@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\DeletesMedia;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class Item extends Model
 {
-    use HasFactory;
+    use HasFactory, DeletesMedia;
 
     protected $fillable = [
         'name',

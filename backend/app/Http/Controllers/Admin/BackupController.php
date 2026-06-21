@@ -221,6 +221,19 @@ class BackupController extends BaseApiController
             $zip->close();
             @unlink($tmpZip);
 
+            // Reconnect to restored DB, then migrate to bring schema up to date
+            DB::disconnect();
+            $migrateCode = Artisan::call('migrate', ['--force' => true]);
+            if ($migrateCode !== 0) {
+                Artisan::call('up');
+                return $this->error(
+                    'Datenbank und Dateien wurden wiederhergestellt, aber die Schema-Migration ' .
+                    'schlug fehl. Bitte manuell prüfen oder Pre-Restore-Backup verwenden: ' .
+                    basename($preZip),
+                    500
+                );
+            }
+
             Artisan::call('up');
             return $this->success(null, 'Wiederherstellung erfolgreich abgeschlossen');
         } catch (\Throwable $e) {
