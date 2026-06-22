@@ -65,10 +65,15 @@
           <input type="checkbox" v-model="filters.in_inbox" @change="fetchItems">
           Nur Inbox
         </label>
-        
+
         <label class="filter-checkbox">
           <input type="checkbox" v-model="filters.warranty_expiring" @change="fetchItems">
           Garantie läuft ab
+        </label>
+
+        <label class="filter-checkbox">
+          <input type="checkbox" v-model="filters.show_accessories" @change="fetchItems">
+          Zubehör anzeigen
         </label>
       </div>
     </div>
@@ -290,6 +295,7 @@ const filters = ref({
   room_id: '',
   in_inbox: false,
   warranty_expiring: false,
+  show_accessories: false,
 })
 
 const pagination = ref({
@@ -365,6 +371,7 @@ function changePage(page) {
 }
 
 function getLocationText(item) {
+  if (item.location_path) return item.location_path
   if (item.is_in_inbox) return 'Inbox'
   if (item.box) return item.box.name ? `${item.box.name}` : `B${item.box.id}`
   if (item.room) return item.room.name ? `${item.room.name}` : `R${item.room.id}`

@@ -129,7 +129,7 @@ class RoomController extends BaseApiController
             return $this->error('Raum nicht gefunden', 404);
         }
 
-        $query = $room->items()->with(['category', 'coverImage']);
+        $query = $room->items()->with(['category', 'coverImage', 'room', 'box.room', 'parentItem.room', 'parentItem.box.room']);
 
         // Status-Filter (Default: nur aktive Items)
         $statusFilter = $request->get('status', 'aktiv');

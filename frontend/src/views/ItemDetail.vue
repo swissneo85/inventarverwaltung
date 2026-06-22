@@ -56,7 +56,32 @@
 
       <div class="card detail-card">
         <h2>Standort</h2>
-        <div class="detail-row"><span>Ort</span><span>{{ locationText }}</span></div>
+        <div class="detail-row">
+          <span>Ort</span>
+          <span class="location-path">{{ locationText }}</span>
+        </div>
+      </div>
+
+      <!-- Enthaltene Items (Zubehör) -->
+      <div v-if="item.child_items && item.child_items.length > 0" class="card detail-card">
+        <h2>Enthaltene Items (Zubehör) ({{ item.child_items.length }})</h2>
+        <router-link
+          v-for="child in item.child_items"
+          :key="child.id"
+          :to="`/items/${child.id}`"
+          class="child-item-row"
+        >
+          <div class="child-thumb">
+            <img v-if="child.image_url" :src="child.image_url" :alt="child.name" class="child-thumb-img">
+            <span v-else class="child-thumb-ph">{{ child.display_id || 'I' + child.id }}</span>
+          </div>
+          <span class="child-id">{{ child.display_id || 'I' + child.id }}</span>
+          <span class="child-name">{{ child.name }}</span>
+          <span v-if="child.category" class="child-cat">{{ child.category.name }}</span>
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="child-chevron">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </router-link>
       </div>
 
       <div class="card detail-card" v-if="item.purchase_price || item.purchased_at || item.warranty_until || item.purchase_location">
@@ -111,6 +136,7 @@ const imageCount = ref(null)
 
 const locationText = computed(() => {
   if (!item.value) return '–'
+  if (item.value.location_path) return item.value.location_path
   if (item.value.is_in_inbox) return 'Inbox'
   if (item.value.box) return `Box: ${item.value.box.name}`
   if (item.value.room) return `Raum: ${item.value.room.name}`
@@ -249,6 +275,41 @@ onMounted(loadItem)
 .status-verloren { background: #fee2e2; color: #991b1b; }
 .status-verkauft { background: #e0f2fe; color: #075985; }
 .status-default  { background: #f3f4f6; color: #6b7280; }
+
+.location-path {
+  text-align: right;
+  word-break: break-word;
+  font-size: 0.875rem;
+}
+
+.child-item-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 0;
+  border-bottom: 1px solid #f3f4f6;
+  text-decoration: none;
+  color: inherit;
+  transition: background 0.12s;
+  border-radius: 6px;
+}
+.child-item-row:last-child { border-bottom: none; }
+.child-item-row:hover { background: #f9fafb; }
+
+.child-thumb {
+  width: 36px; height: 36px;
+  border-radius: 6px; overflow: hidden;
+  background: #dbeafe;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.child-thumb-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.child-thumb-ph { font-size: 0.6rem; font-weight: 700; color: #3b82f6; }
+
+.child-id { font-size: 0.7rem; font-weight: 600; color: #3b82f6; min-width: 40px; }
+.child-name { font-size: 0.875rem; font-weight: 500; color: #111827; flex: 1; }
+.child-cat { font-size: 0.75rem; color: #9ca3af; }
+.child-chevron { color: #d1d5db; flex-shrink: 0; }
 
 .loading { padding: 2rem; text-align: center; color: #6b7280; }
 

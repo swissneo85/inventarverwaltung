@@ -16,7 +16,11 @@ class ItemController extends BaseApiController
     public function index(Request $request)
     {
         $user = auth()->user();
-        $query = Item::with(['category', 'room', 'box', 'coverImage']);
+        $query = Item::with([
+            'category', 'room', 'box.room', 'coverImage',
+            'parentItem.room', 'parentItem.box.room',
+            'parentItem.parentItem.room', 'parentItem.parentItem.box.room',
+        ]);
 
         // Kategorie-Filter für Viewer mit konfigurierten Berechtigungen
         if ($user->role === 'viewer') {
@@ -56,6 +60,16 @@ class ItemController extends BaseApiController
 
         if ($request->has('in_inbox')) {
             $query->where('is_in_inbox', $request->boolean('in_inbox'));
+        }
+
+        // Zubehör-Items standardmässig ausblenden
+        if (!$request->boolean('show_accessories', false)) {
+            $query->topLevel();
+        }
+
+        // Nach parent_item_id filtern
+        if ($request->has('parent_item_id')) {
+            $query->where('parent_item_id', $request->parent_item_id);
         }
 
         if ($request->has('warranty_expiring')) {
@@ -168,8 +182,9 @@ class ItemController extends BaseApiController
             // Location (nur eins sollte gesetzt sein)
             'room_id' => 'nullable|exists:rooms,id',
             'box_id' => 'nullable|exists:boxes,id',
+            'parent_item_id' => 'nullable|exists:items,id',
             'is_in_inbox' => 'nullable|boolean',
-            
+
             // Menge / Zustand
             'quantity' => 'nullable|numeric|min:0',
             'unit' => 'nullable|string|max:50',
@@ -194,8 +209,23 @@ class ItemController extends BaseApiController
             'image' => 'nullable|string',
         ]);
 
-        // Wenn nichts zugeordnet, dann in Inbox
-        if (!$request->room_id && !$request->box_id && !$request->is_in_inbox) {
+        // Standort gegenseitig exklusiv
+        if ($validated['parent_item_id'] ?? null) {
+            $validated['room_id'] = null;
+            $validated['box_id'] = null;
+            $validated['is_in_inbox'] = false;
+        } elseif ($validated['room_id'] ?? null) {
+            $validated['box_id'] = null;
+            $validated['parent_item_id'] = null;
+            $validated['is_in_inbox'] = false;
+        } elseif ($validated['box_id'] ?? null) {
+            $validated['room_id'] = null;
+            $validated['parent_item_id'] = null;
+            $validated['is_in_inbox'] = false;
+        } else {
+            $validated['room_id'] = null;
+            $validated['box_id'] = null;
+            $validated['parent_item_id'] = null;
             $validated['is_in_inbox'] = true;
         }
 
@@ -215,7 +245,13 @@ class ItemController extends BaseApiController
             return $this->error('Item nicht gefunden', 404);
         }
 
-        $item->load(['category', 'subcategory', 'person', 'loanedToPerson', 'room', 'box', 'documents']);
+        $item->load([
+            'category', 'subcategory', 'person', 'loanedToPerson', 'room', 'box.room', 'documents',
+            'parentItem.room', 'parentItem.box.room',
+            'parentItem.parentItem.room', 'parentItem.parentItem.box.room',
+            'parentItem.parentItem.parentItem.room', 'parentItem.parentItem.parentItem.box.room',
+            'childItems' => fn($q) => $q->with(['category', 'coverImage'])->orderBy('name'),
+        ]);
         $item->qr_code_image = $item->qr_token ? $item->getQrCodeImageBase64() : null;
 
         return $this->success($item);
@@ -248,8 +284,9 @@ class ItemController extends BaseApiController
 
             'room_id' => 'nullable|exists:rooms,id',
             'box_id' => 'nullable|exists:boxes,id',
+            'parent_item_id' => 'nullable|exists:items,id',
             'is_in_inbox' => 'nullable|boolean',
-            
+
             'quantity' => 'nullable|numeric|min:0',
             'unit' => 'nullable|string|max:50',
             'condition' => 'nullable|string|max:100',
@@ -272,18 +309,45 @@ class ItemController extends BaseApiController
         ]);
 
         // Leere Strings für FK-Felder auf NULL normalisieren
-        foreach (['category_id', 'person_id', 'loaned_to_person_id', 'room_id', 'box_id'] as $field) {
+        foreach (['category_id', 'person_id', 'loaned_to_person_id', 'room_id', 'box_id', 'parent_item_id'] as $field) {
             if (array_key_exists($field, $validated) && $validated[$field] === '') {
                 $validated[$field] = null;
             }
         }
 
-        // Wenn kein Standort zugewiesen, Item in Inbox
-        if (array_key_exists('room_id', $validated) || array_key_exists('box_id', $validated)) {
-            if (!($validated['room_id'] ?? null) && !($validated['box_id'] ?? null)) {
-                $validated['is_in_inbox'] = true;
-            } else {
+        // Standort gegenseitig exklusiv + Zirkelbezug-Check
+        $locationFields = ['room_id', 'box_id', 'parent_item_id', 'is_in_inbox'];
+        $hasAnyLocation = array_intersect_key($validated, array_flip($locationFields));
+
+        if (!empty($hasAnyLocation)) {
+            $newParentId = $validated['parent_item_id'] ?? null;
+            $newRoomId   = $validated['room_id'] ?? null;
+            $newBoxId    = $validated['box_id'] ?? null;
+
+            if ($newParentId) {
+                if ($newParentId == $item->id) {
+                    return $this->error('Ein Item kann nicht sein eigenes übergeordnetes Item sein.', 422);
+                }
+                $parentItem = Item::find($newParentId);
+                if ($parentItem && $parentItem->isDescendantOf($item->id)) {
+                    return $this->error('Zirkelbezug erkannt: Das gewählte übergeordnete Item ist ein Unteritem dieses Items.', 422);
+                }
+                $validated['room_id']    = null;
+                $validated['box_id']     = null;
                 $validated['is_in_inbox'] = false;
+            } elseif ($newRoomId) {
+                $validated['box_id']        = null;
+                $validated['parent_item_id'] = null;
+                $validated['is_in_inbox']   = false;
+            } elseif ($newBoxId) {
+                $validated['room_id']        = null;
+                $validated['parent_item_id'] = null;
+                $validated['is_in_inbox']   = false;
+            } else {
+                $validated['room_id']        = null;
+                $validated['box_id']         = null;
+                $validated['parent_item_id'] = null;
+                $validated['is_in_inbox']   = true;
             }
         }
 
@@ -298,14 +362,69 @@ class ItemController extends BaseApiController
     public function destroy(Request $request, $id)
     {
         $item = Item::find($id);
-        
+
         if (!$item) {
             return $this->error('Item nicht gefunden', 404);
+        }
+
+        if ($item->childItems()->exists()) {
+            return $this->error('Dieses Item kann nicht gelöscht werden, solange es Zubehör-Items enthält. Bitte zuerst die Zubehör-Items umhängen oder löschen.', 422);
         }
 
         $item->delete();
 
         return $this->success(null, 'Item gelöscht');
+    }
+
+    /**
+     * Zubehör-Items (Kinder) eines Items
+     */
+    public function childItems(Request $request, $id)
+    {
+        $item = Item::find($id);
+
+        if (!$item) {
+            return $this->error('Item nicht gefunden', 404);
+        }
+
+        $items = $item->childItems()
+            ->with(['category', 'room', 'box.room', 'coverImage',
+                'parentItem.room', 'parentItem.box.room'])
+            ->orderBy('name')
+            ->get();
+
+        return $this->success($items);
+    }
+
+    /**
+     * Item einem anderen Item zuweisen (Zubehör)
+     */
+    public function assignToItem(Request $request, $id)
+    {
+        $item = Item::find($id);
+
+        if (!$item) {
+            return $this->error('Item nicht gefunden', 404);
+        }
+
+        $request->validate([
+            'parent_item_id' => 'required|exists:items,id',
+        ]);
+
+        $parentItemId = $request->parent_item_id;
+
+        if ($parentItemId == $item->id) {
+            return $this->error('Ein Item kann nicht sein eigenes übergeordnetes Item sein.', 422);
+        }
+
+        $parentItem = Item::find($parentItemId);
+        if ($parentItem->isDescendantOf($item->id)) {
+            return $this->error('Zirkelbezug erkannt.', 422);
+        }
+
+        $item->assignToItem($parentItem);
+
+        return $this->success($item->load('parentItem'), 'Item zugewiesen');
     }
 
     /**

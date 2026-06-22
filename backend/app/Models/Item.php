@@ -28,6 +28,7 @@ class Item extends Model
         'inventory_number',
         'room_id',
         'box_id',
+        'parent_item_id',
         'is_in_inbox',
         'quantity',
         'unit',
@@ -63,13 +64,14 @@ class Item extends Model
         'status_datum' => 'date',
         'room_id' => 'integer',
         'box_id' => 'integer',
+        'parent_item_id' => 'integer',
         'category_id' => 'integer',
         'subcategory_id' => 'integer',
         'person_id' => 'integer',
         'loaned_to_person_id' => 'integer',
     ];
 
-    protected $appends = ['display_id', 'qr_code_url', 'location_type', 'image_url'];
+    protected $appends = ['display_id', 'qr_code_url', 'location_type', 'image_url', 'location_path'];
 
     /**
      * Sichtbare Kennung: I{id}
@@ -88,7 +90,7 @@ class Item extends Model
     }
 
     /**
-     * Standort-Typ: inbox, room, box
+     * Standort-Typ: inbox, room, box, item
      */
     public function getLocationTypeAttribute(): string
     {
@@ -101,7 +103,55 @@ class Item extends Model
         if ($this->room_id) {
             return 'room';
         }
+        if ($this->parent_item_id) {
+            return 'item';
+        }
         return 'unknown';
+    }
+
+    /**
+     * Vollständiger Standort-Pfad von direktem Parent bis zum Raum
+     * z.B. "I42 Bluey Spielhaus → B10 Spielzeugkiste → R3 Kinderzimmer"
+     */
+    public function getLocationPathAttribute(): string
+    {
+        $parts = [];
+        $current = $this;
+        $depth = 0;
+
+        while ($current->parent_item_id && $depth < 10) {
+            $parent = $current->relationLoaded('parentItem')
+                ? $current->parentItem
+                : $current->parentItem()->with(['room', 'box.room', 'parentItem'])->first();
+            if (!$parent) break;
+            $parts[] = $parent->display_id . ' ' . $parent->name;
+            $current = $parent;
+            $depth++;
+        }
+
+        if ($current->is_in_inbox) {
+            $parts[] = 'Inbox';
+        } elseif ($current->box_id) {
+            $box = $current->relationLoaded('box')
+                ? $current->box
+                : $current->box()->with('room')->first();
+            if ($box) {
+                $parts[] = 'B' . $box->id . ' ' . $box->name;
+                $room = $box->relationLoaded('room') ? $box->room : $box->room()->first();
+                if ($room) {
+                    $parts[] = 'R' . $room->id . ' ' . $room->name;
+                }
+            }
+        } elseif ($current->room_id) {
+            $room = $current->relationLoaded('room')
+                ? $current->room
+                : $current->room()->first();
+            if ($room) {
+                $parts[] = 'R' . $room->id . ' ' . $room->name;
+            }
+        }
+
+        return implode(' → ', $parts);
     }
 
     public function getImageUrlAttribute(): ?string
@@ -169,6 +219,22 @@ class Item extends Model
     public function box()
     {
         return $this->belongsTo(Box::class);
+    }
+
+    /**
+     * Übergeordnetes Item (Zubehör-Beziehung)
+     */
+    public function parentItem()
+    {
+        return $this->belongsTo(Item::class, 'parent_item_id');
+    }
+
+    /**
+     * Untergeordnete Items (Zubehör dieses Items)
+     */
+    public function childItems()
+    {
+        return $this->hasMany(Item::class, 'parent_item_id');
     }
 
     public function images()
@@ -239,6 +305,7 @@ class Item extends Model
     {
         $this->room_id = $room->id;
         $this->box_id = null;
+        $this->parent_item_id = null;
         $this->is_in_inbox = false;
         $this->save();
     }
@@ -250,6 +317,7 @@ class Item extends Model
     {
         $this->box_id = $box->id;
         $this->room_id = null;
+        $this->parent_item_id = null;
         $this->is_in_inbox = false;
         $this->save();
     }
@@ -261,8 +329,39 @@ class Item extends Model
     {
         $this->room_id = null;
         $this->box_id = null;
+        $this->parent_item_id = null;
         $this->is_in_inbox = true;
         $this->save();
+    }
+
+    /**
+     * Zu übergeordnetem Item zuweisen (Zubehör)
+     */
+    public function assignToItem(Item $parentItem): void
+    {
+        $this->parent_item_id = $parentItem->id;
+        $this->room_id = null;
+        $this->box_id = null;
+        $this->is_in_inbox = false;
+        $this->save();
+    }
+
+    /**
+     * Prüft ob dieses Item ein Nachkomme von $ancestorId ist (Zirkelbezug-Schutz)
+     */
+    public function isDescendantOf(int $ancestorId): bool
+    {
+        $current = $this;
+        $depth = 0;
+        while ($current->parent_item_id && $depth < 20) {
+            if ($current->parent_item_id === $ancestorId) {
+                return true;
+            }
+            $current = static::find($current->parent_item_id);
+            if (!$current) break;
+            $depth++;
+        }
+        return false;
     }
 
     /**
@@ -296,6 +395,16 @@ class Item extends Model
     public function scopeInBox($query, $boxId)
     {
         return $query->where('box_id', $boxId);
+    }
+
+    public function scopeTopLevel($query)
+    {
+        return $query->whereNull('parent_item_id');
+    }
+
+    public function scopeChildrenOf($query, $itemId)
+    {
+        return $query->where('parent_item_id', $itemId);
     }
 
     public function scopeInCategory($query, $categoryId)

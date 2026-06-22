@@ -227,7 +227,7 @@ class BoxController extends BaseApiController
             return $this->error('Box nicht gefunden', 404);
         }
 
-        $query = $box->items()->with(['category', 'coverImage']);
+        $query = $box->items()->with(['category', 'coverImage', 'room', 'box.room', 'parentItem.room', 'parentItem.box.room']);
 
         // Status-Filter (Default: nur aktive Items)
         $statusFilter = $request->get('status', 'aktiv');

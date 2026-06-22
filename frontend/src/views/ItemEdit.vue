@@ -161,13 +161,31 @@
             <input v-model="form.serial_number" type="text">
           </div>
 
-          <!-- Raum / Box -->
-          <div class="form-row">
-            <div class="form-group">
-              <label>Raum</label>
+          <!-- Standort -->
+          <div class="form-group">
+            <label>Standort</label>
+            <div class="location-type-radios">
+              <label :class="['radio-option', { active: locationType === 'inbox' }]">
+                <input type="radio" v-model="locationType" value="inbox">
+                <span>Inbox</span>
+              </label>
+              <label :class="['radio-option', { active: locationType === 'room' }]">
+                <input type="radio" v-model="locationType" value="room">
+                <span>In einem Raum</span>
+              </label>
+              <label :class="['radio-option', { active: locationType === 'box' }]">
+                <input type="radio" v-model="locationType" value="box">
+                <span>In einer Box</span>
+              </label>
+              <label :class="['radio-option', { active: locationType === 'item' }]">
+                <input type="radio" v-model="locationType" value="item">
+                <span>In einem anderen Item</span>
+              </label>
+            </div>
+
+            <div v-if="locationType === 'room'" class="location-detail">
               <SearchableSelect
-                :model-value="form.room_id"
-                @update:model-value="val => { form.room_id = val; if (val) form.box_id = '' }"
+                v-model="form.room_id"
                 :options="roomOptions"
                 placeholder="Raum wählen..."
                 create-route="RoomCreate"
@@ -175,16 +193,21 @@
                 @before-navigate="saveFormDraft"
               />
             </div>
-            <div class="form-group">
-              <label>Box</label>
+            <div v-else-if="locationType === 'box'" class="location-detail">
               <SearchableSelect
-                :model-value="form.box_id"
-                @update:model-value="val => { form.box_id = val; if (val) form.room_id = '' }"
+                v-model="form.box_id"
                 :options="boxOptions"
                 placeholder="Box wählen..."
                 create-route="BoxCreate"
                 create-label="Neue Box anlegen"
                 @before-navigate="saveFormDraft"
+              />
+            </div>
+            <div v-else-if="locationType === 'item'" class="location-detail">
+              <ItemSearchInput
+                v-model="form.parent_item_id"
+                placeholder="Item suchen (ID oder Name)…"
+                :exclude-id="id ? Number(id) : null"
               />
             </div>
           </div>
@@ -267,7 +290,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from '@/services/api'
 import { useToast } from 'vue-toastification'
@@ -275,6 +298,7 @@ import ImageGallery from '@/components/ImageGallery.vue'
 import SearchableSelect from '@/components/SearchableSelect.vue'
 import DocumentGallery from '@/components/DocumentGallery.vue'
 import AutocompleteInput from '@/components/AutocompleteInput.vue'
+import ItemSearchInput from '@/components/ItemSearchInput.vue'
 import { useAuthStore } from '@/stores/auth'
 
 const route = useRoute()
@@ -356,10 +380,31 @@ const form = ref({
   unit: '',
   room_id: '',
   box_id: '',
+  parent_item_id: null,
   purchase_price: '',
   purchased_at: '',
   warranty_until: '',
   purchase_location: '',
+})
+
+// Computed location type from form values
+const locationType = ref('inbox')
+
+watch(locationType, (val) => {
+  if (val === 'inbox') {
+    form.value.room_id = ''
+    form.value.box_id = ''
+    form.value.parent_item_id = null
+  } else if (val === 'room') {
+    form.value.box_id = ''
+    form.value.parent_item_id = null
+  } else if (val === 'box') {
+    form.value.room_id = ''
+    form.value.parent_item_id = null
+  } else if (val === 'item') {
+    form.value.room_id = ''
+    form.value.box_id = ''
+  }
 })
 
 async function loadDocuments() {
@@ -409,11 +454,17 @@ onMounted(async () => {
         unit: item.unit ?? '',
         room_id: item.room_id ?? '',
         box_id: item.box_id ?? '',
+        parent_item_id: item.parent_item_id ?? null,
         purchase_price: item.purchase_price ?? '',
         purchased_at: item.purchased_at ? item.purchased_at.substring(0, 10) : '',
         warranty_until: item.warranty_until ? item.warranty_until.substring(0, 10) : '',
         purchase_location: item.purchase_location ?? '',
       }
+      // Set location type radio based on loaded item
+      if (item.parent_item_id) locationType.value = 'item'
+      else if (item.box_id) locationType.value = 'box'
+      else if (item.room_id) locationType.value = 'room'
+      else locationType.value = 'inbox'
       // Ensure assigned persons (possibly inactive) appear in the dropdown
       const knownIds = new Set(persons.value.map(p => p.id))
       for (const rel of [item.person, item.loaned_to_person]) {
@@ -427,7 +478,14 @@ onMounted(async () => {
       // Neu-Erstellen: Draft aus sessionStorage wiederherstellen
       const raw = sessionStorage.getItem(FORM_DRAFT_KEY)
       if (raw) {
-        try { form.value = { ...form.value, ...JSON.parse(raw) } } catch {}
+        try {
+          const draft = JSON.parse(raw)
+          form.value = { ...form.value, ...draft }
+          if (draft.parent_item_id) locationType.value = 'item'
+          else if (draft.box_id) locationType.value = 'box'
+          else if (draft.room_id) locationType.value = 'room'
+          else locationType.value = 'inbox'
+        } catch {}
         sessionStorage.removeItem(FORM_DRAFT_KEY)
       }
     }
@@ -436,10 +494,14 @@ onMounted(async () => {
     if (route.query.newRoomId) {
       form.value.room_id = Number(route.query.newRoomId)
       form.value.box_id = ''
+      form.value.parent_item_id = null
+      locationType.value = 'room'
       router.replace({ query: { ...route.query, newRoomId: undefined } })
     } else if (route.query.newBoxId) {
       form.value.box_id = Number(route.query.newBoxId)
       form.value.room_id = ''
+      form.value.parent_item_id = null
+      locationType.value = 'box'
       router.replace({ query: { ...route.query, newBoxId: undefined } })
     } else if (route.query.newCategoryId) {
       form.value.category_id = Number(route.query.newCategoryId)
@@ -523,17 +585,19 @@ async function deleteItem() {
 function buildPayload() {
   const f = form.value
   const nullify = v => (v === '' || v === undefined) ? null : v
+  const loc = locationType.value
   const payload = {
     ...f,
     category_id: nullify(f.category_id),
     person_id: nullify(f.person_id),
     loaned_to_person_id: nullify(f.loaned_to_person_id),
-    room_id: nullify(f.room_id),
-    box_id: nullify(f.box_id),
     status_datum: nullify(f.status_datum),
     status_notiz: nullify(f.status_notiz),
+    room_id: loc === 'room' ? nullify(f.room_id) : null,
+    box_id: loc === 'box' ? nullify(f.box_id) : null,
+    parent_item_id: loc === 'item' ? (f.parent_item_id || null) : null,
+    is_in_inbox: loc === 'inbox',
   }
-  payload.is_in_inbox = !payload.room_id && !payload.box_id
   return payload
 }
 
@@ -700,6 +764,44 @@ async function save() {
   padding: 0.75rem;
   border: 1px solid #e5e7eb;
   margin-top: -0.5rem;
+}
+
+.location-type-radios {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.radio-option {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 99px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: #374151;
+  transition: all 0.15s;
+  user-select: none;
+}
+
+.radio-option.active {
+  background: #eff6ff;
+  border-color: #3b82f6;
+  color: #1d4ed8;
+}
+
+.radio-option input[type="radio"] {
+  width: auto;
+  margin: 0;
+  padding: 0;
+  accent-color: #3b82f6;
+}
+
+.location-detail {
+  margin-top: 0;
 }
 
 @media (max-width: 767px) {

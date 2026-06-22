@@ -84,6 +84,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/items/{id}', [ItemController::class, 'show']);
     Route::get('/items/{id}/images', fn(Request $r, $id) => app(ImageController::class)->index('items', $id));
     Route::get('/items/{id}/documents', [ItemDocumentController::class, 'index']);
+    Route::get('/items/{id}/items', [ItemController::class, 'childItems']);
 
     // Ausgeliehene Gegenstände
     Route::get('loans', function () {
@@ -132,6 +133,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::patch('/items/{id}', [ItemController::class, 'update']);
         Route::post('/items/{id}/assign-room', [ItemController::class, 'assignToRoom']);
         Route::post('/items/{id}/assign-box', [ItemController::class, 'assignToBox']);
+        Route::post('/items/{id}/assign-item', [ItemController::class, 'assignToItem']);
         Route::post('/items/{id}/move-to-inbox', [ItemController::class, 'moveToInbox']);
         Route::post('/items/{id}/qr-code', [ItemController::class, 'generateQrCode']);
         Route::post('/items/{id}/images', fn(Request $r, $id) => app(ImageController::class)->store($r, 'items', $id));

@@ -46,8 +46,11 @@
             class="search-item"
             @click="closeResults"
           >
-            <span class="item-id">I{{ item.id }}</span>
-            <span class="item-name">{{ item.name }}</span>
+            <span class="item-id">{{ item.display_id || 'I' + item.id }}</span>
+            <div class="item-main">
+              <span class="item-name">{{ item.name }}</span>
+              <span v-if="item.location_path" class="item-location">{{ item.location_path }}</span>
+            </div>
           </router-link>
         </div>
         
@@ -308,8 +311,23 @@ onUnmounted(() => {
   font-family: monospace;
 }
 
+.item-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
 .item-name {
   font-size: 0.875rem;
+}
+
+.item-location {
+  font-size: 0.7rem;
+  color: #9ca3af;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .no-results {

@@ -31,13 +31,17 @@ class SearchController extends BaseApiController
 
         // Items suchen (nur aktive Items)
         if ($type === 'all' || $type === 'items') {
-            $items = Item::with(['category', 'room', 'box'])
+            $items = Item::with([
+                    'category', 'room', 'box.room',
+                    'parentItem.room', 'parentItem.box.room',
+                    'parentItem.parentItem.room', 'parentItem.parentItem.box.room',
+                ])
                 ->aktiv()
                 ->search($term)
                 ->orderBy('name')
                 ->limit(20)
                 ->get();
-            
+
             $results['items'] = $items;
         }
 
@@ -98,7 +102,10 @@ class SearchController extends BaseApiController
     {
         switch (strtoupper($type)) {
             case 'I':
-                $item = Item::with(['category', 'room', 'box'])->find($id);
+                $item = Item::with([
+                    'category', 'room', 'box.room',
+                    'parentItem.room', 'parentItem.box.room',
+                ])->find($id);
                 if ($item) {
                     return $this->success([
                         'type' => 'item',
@@ -147,16 +154,23 @@ class SearchController extends BaseApiController
         $results = [];
 
         // Items (nur aktive, Name, Beschreibung, Seriennummer, Modell, Hersteller)
-        $items = Item::aktiv()
+        $items = Item::with([
+                'room', 'box.room',
+                'parentItem.room', 'parentItem.box.room',
+                'parentItem.parentItem.room', 'parentItem.parentItem.box.room',
+            ])
+            ->aktiv()
             ->search($term)
             ->limit(10)
-            ->get(['id', 'name'])
+            ->get()
             ->map(function ($item) {
                 return [
                     'type' => 'item',
                     'id' => $item->id,
                     'display_id' => 'I' . $item->id,
                     'name' => $item->name,
+                    'location_path' => $item->location_path,
+                    'parent_item_id' => $item->parent_item_id,
                 ];
             });
 
