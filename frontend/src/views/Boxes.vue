@@ -68,27 +68,29 @@
             <div class="list-name">{{ box.name }}</div>
             <div class="list-sub">{{ box.room ? box.room.name : 'Inbox' }}</div>
           </div>
-          <div class="list-stats">
-            <span class="stat-chip">{{ box.items_count || 0 }} Items</span>
-          </div>
-          <div class="list-actions" @click.stop>
-            <router-link :to="`/boxes/${box.id}`" class="row-btn" title="Ansehen">
-              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>
-              </svg>
-            </router-link>
-            <router-link v-if="canEdit" :to="`/boxes/${box.id}/edit`" class="row-btn" title="Bearbeiten">
-              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-              </svg>
-            </router-link>
-            <button v-if="canDelete" class="row-btn row-btn-danger" title="Löschen" @click="confirmDelete(box)">
-              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
-                <path d="M10 11v6"></path><path d="M14 11v6"></path>
-              </svg>
-            </button>
+          <div class="list-footer" @click.stop>
+            <div class="list-stats">
+              <span class="stat-chip">{{ box.items_count || 0 }} Items</span>
+            </div>
+            <div class="list-actions">
+              <router-link :to="`/boxes/${box.id}`" class="row-btn" title="Ansehen">
+                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>
+                </svg>
+              </router-link>
+              <router-link v-if="canEdit" :to="`/boxes/${box.id}/edit`" class="row-btn" title="Bearbeiten">
+                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                </svg>
+              </router-link>
+              <button v-if="canDelete" class="row-btn row-btn-danger" title="Löschen" @click="confirmDelete(box)">
+                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+                  <path d="M10 11v6"></path><path d="M14 11v6"></path>
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -299,9 +301,26 @@ async function doDelete() {
 .list-info { flex: 1; min-width: 0; }
 .list-name { font-weight: 600; font-size: 0.9rem; color: #111827; }
 .list-sub { font-size: 0.8rem; color: #9ca3af; }
+.list-footer { display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0; }
 .list-stats { display: flex; gap: 0.5rem; }
 .stat-chip { font-size: 0.75rem; padding: 0.2rem 0.6rem; background: #f3f4f6; color: #6b7280; border-radius: 99px; }
 .list-actions { display: flex; gap: 0.25rem; }
+
+@media (max-width: 640px) {
+  .list-card {
+    display: grid;
+    grid-template-columns: 52px 1fr;
+    grid-template-rows: auto auto;
+    column-gap: 0.75rem;
+    row-gap: 0.375rem;
+    align-items: start;
+  }
+  .list-thumb { grid-column: 1; grid-row: 1 / span 2; align-self: center; }
+  .list-id { display: none; }
+  .list-info { grid-column: 2; grid-row: 1; }
+  .list-sub { white-space: normal; word-break: break-word; }
+  .list-footer { grid-column: 2; grid-row: 2; justify-content: flex-end; }
+}
 
 /* Gallery */
 .gallery-view { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 1rem; }

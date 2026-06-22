@@ -8,20 +8,22 @@
     </div>
     <span class="item-id">{{ item.display_id || 'I' + item.id }}</span>
     <span class="item-name">{{ item.name }}</span>
-    <span v-if="item.category" class="item-cat">{{ item.category.name }}</span>
-    <span v-if="locationText" class="item-loc">{{ locationText }}</span>
-    <div class="item-actions" @click.stop>
-      <router-link :to="`/items/${item.id}`" class="row-btn" title="Details">
-        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>
-        </svg>
-      </router-link>
-      <router-link v-if="canEdit" :to="`/items/${item.id}/edit`" class="row-btn" title="Bearbeiten">
-        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-        </svg>
-      </router-link>
+    <div class="item-footer" @click.stop>
+      <span v-if="item.category" class="item-cat">{{ item.category.name }}</span>
+      <span v-if="locationText" class="item-loc">{{ locationText }}</span>
+      <div class="item-actions">
+        <router-link :to="`/items/${item.id}`" class="row-btn" title="Details">
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>
+          </svg>
+        </router-link>
+        <router-link v-if="canEdit" :to="`/items/${item.id}/edit`" class="row-btn" title="Bearbeiten">
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+          </svg>
+        </router-link>
+      </div>
     </div>
   </div>
 </template>
@@ -106,6 +108,13 @@ const locationText = computed(() => {
   min-width: 0;
 }
 
+.item-footer {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
 .item-cat {
   font-size: 0.75rem;
   color: #9ca3af;
@@ -140,7 +149,30 @@ const locationText = computed(() => {
 }
 
 @media (max-width: 640px) {
-  .item-cat,
-  .item-loc { display: none; }
+  .item-row {
+    display: grid;
+    grid-template-columns: 48px 1fr;
+    grid-template-rows: auto auto;
+    column-gap: 0.75rem;
+    row-gap: 0.25rem;
+    align-items: start;
+    min-height: unset;
+    padding: 0.625rem 0.75rem;
+  }
+  .item-thumb { grid-column: 1; grid-row: 1 / span 2; align-self: center; }
+  .item-id { display: none; }
+  .item-name {
+    grid-column: 2;
+    grid-row: 1;
+    white-space: normal;
+    align-self: center;
+  }
+  .item-footer {
+    grid-column: 2;
+    grid-row: 2;
+    justify-content: space-between;
+    .item-cat, .item-loc { white-space: normal; }
+    .item-actions { margin-left: auto; }
+  }
 }
 </style>
