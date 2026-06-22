@@ -128,6 +128,7 @@ const router = useRouter()
 const toast = useToast()
 const authStore = useAuthStore()
 const canEdit = computed(() => authStore.isEditor)
+const id = computed(() => route.params.id)
 
 const item = ref(null)
 const loading = ref(true)
