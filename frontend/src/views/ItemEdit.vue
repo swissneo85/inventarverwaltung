@@ -167,19 +167,36 @@
             <div class="location-type-radios">
               <label :class="['radio-option', { active: locationType === 'inbox' }]">
                 <input type="radio" v-model="locationType" value="inbox">
+                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline>
+                  <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path>
+                </svg>
                 <span>Inbox</span>
               </label>
               <label :class="['radio-option', { active: locationType === 'room' }]">
                 <input type="radio" v-model="locationType" value="room">
-                <span>In einem Raum</span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                  <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                </svg>
+                <span>Raum</span>
               </label>
               <label :class="['radio-option', { active: locationType === 'box' }]">
                 <input type="radio" v-model="locationType" value="box">
-                <span>In einer Box</span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                  <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                  <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                </svg>
+                <span>Box</span>
               </label>
               <label :class="['radio-option', { active: locationType === 'item' }]">
                 <input type="radio" v-model="locationType" value="item">
-                <span>In einem anderen Item</span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                </svg>
+                <span>Item</span>
               </label>
             </div>
 
@@ -767,8 +784,8 @@ async function save() {
 }
 
 .location-type-radios {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 0.5rem;
   margin-bottom: 0.75rem;
 }
@@ -776,15 +793,23 @@ async function save() {
 .radio-option {
   display: flex;
   align-items: center;
-  gap: 0.35rem;
-  padding: 0.4rem 0.75rem;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.5rem;
   border: 1px solid #d1d5db;
-  border-radius: 99px;
+  border-radius: 8px;
   cursor: pointer;
   font-size: 0.875rem;
+  font-weight: 500;
   color: #374151;
   transition: all 0.15s;
   user-select: none;
+  min-height: 2.5rem;
+}
+
+.radio-option:hover:not(.active) {
+  background: #f9fafb;
+  border-color: #9ca3af;
 }
 
 .radio-option.active {
@@ -794,10 +819,7 @@ async function save() {
 }
 
 .radio-option input[type="radio"] {
-  width: auto;
-  margin: 0;
-  padding: 0;
-  accent-color: #3b82f6;
+  display: none;
 }
 
 .location-detail {
