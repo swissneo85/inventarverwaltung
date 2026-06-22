@@ -115,7 +115,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from '@/services/api'
 import { useToast } from 'vue-toastification'
@@ -129,7 +129,6 @@ const toast = useToast()
 const authStore = useAuthStore()
 const canEdit = computed(() => authStore.isEditor)
 
-const id = route.params.id
 const item = ref(null)
 const loading = ref(true)
 const imageCount = ref(null)
@@ -179,8 +178,11 @@ function formatDate(val) {
 }
 
 async function loadItem() {
+  loading.value = true
+  item.value = null
+  imageCount.value = null
   try {
-    const res = await api.get(`/items/${id}`)
+    const res = await api.get(`/items/${route.params.id}`)
     item.value = res.data.data
   } catch {
     router.push({ name: 'Items' })
@@ -188,6 +190,10 @@ async function loadItem() {
     loading.value = false
   }
 }
+
+watch(() => route.params.id, (newId) => {
+  if (newId) loadItem()
+})
 
 onMounted(loadItem)
 </script>

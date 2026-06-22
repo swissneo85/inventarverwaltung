@@ -62,11 +62,6 @@ class ItemController extends BaseApiController
             $query->where('is_in_inbox', $request->boolean('in_inbox'));
         }
 
-        // Zubehör-Items standardmässig ausblenden
-        if (!$request->boolean('show_accessories', false)) {
-            $query->topLevel();
-        }
-
         // Nach parent_item_id filtern
         if ($request->has('parent_item_id')) {
             $query->where('parent_item_id', $request->parent_item_id);
@@ -77,47 +72,35 @@ class ItemController extends BaseApiController
             $query->warrantyExpiring($days);
         }
 
-        // Suche
+        // Suche – Display-ID wird als Query-Filter behandelt (kein Frühausstieg)
+        $isDisplayIdSearch = false;
         if ($request->has('search')) {
             $term = $request->search;
-            
-            // Prüfen ob es eine Display-ID ist
+
             if (preg_match('/^([RBI])(\d+)$/i', $term, $matches)) {
+                $isDisplayIdSearch = true;
                 $type = strtoupper($matches[1]);
-                $id = $matches[2];
-                
+                $numId = (int) $matches[2];
+
                 switch ($type) {
                     case 'I':
-                        $item = Item::find($id);
-                        if ($item) {
-                            return $this->success([
-                                'type' => 'single',
-                                'data' => $item->load(['category', 'room', 'box']),
-                            ]);
-                        }
+                        $query->where('id', $numId);
                         break;
                     case 'B':
-                        $box = Box::with(['room'])->withCount('items')->find($id);
-                        if ($box) {
-                            return $this->success([
-                                'type' => 'box',
-                                'data' => $box,
-                            ]);
-                        }
+                        $query->where('box_id', $numId);
                         break;
                     case 'R':
-                        $room = Room::withCount(['items', 'boxes'])->find($id);
-                        if ($room) {
-                            return $this->success([
-                                'type' => 'room',
-                                'data' => $room,
-                            ]);
-                        }
+                        $query->where('room_id', $numId);
                         break;
                 }
+            } else {
+                $query->search($term);
             }
-            
-            $query->search($term);
+        }
+
+        // Zubehör-Items standardmässig ausblenden (bei Display-ID-Suche nicht nötig)
+        if (!$isDisplayIdSearch && !$request->boolean('show_accessories', false)) {
+            $query->topLevel();
         }
 
         $items = $query->orderBy('name')->paginate($request->get('per_page', 50));

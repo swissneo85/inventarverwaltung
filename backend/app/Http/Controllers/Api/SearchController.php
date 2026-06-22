@@ -164,12 +164,17 @@ class SearchController extends BaseApiController
             ->limit(10)
             ->get()
             ->map(function ($item) {
+                try {
+                    $locationPath = $item->location_path;
+                } catch (\Throwable $e) {
+                    $locationPath = '';
+                }
                 return [
                     'type' => 'item',
                     'id' => $item->id,
                     'display_id' => 'I' . $item->id,
                     'name' => $item->name,
-                    'location_path' => $item->location_path,
+                    'location_path' => $locationPath,
                     'parent_item_id' => $item->parent_item_id,
                 ];
             });
