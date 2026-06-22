@@ -228,7 +228,7 @@ onMounted(async () => {
     const [roomRes, boxesRes, itemsRes] = await Promise.all([
       api.get(`/rooms/${id}`),
       api.get(`/rooms/${id}/boxes`),
-      api.get(`/rooms/${id}/items`)
+      api.get(`/rooms/${id}/items`, { params: { status: 'aktiv', per_page: 200 } })
     ])
     room.value = roomRes.data.data
     boxes.value = boxesRes.data.data?.data || boxesRes.data.data

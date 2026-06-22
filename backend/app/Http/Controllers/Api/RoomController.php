@@ -130,7 +130,15 @@ class RoomController extends BaseApiController
         }
 
         $query = $room->items()->with(['category', 'coverImage']);
-        
+
+        // Status-Filter (Default: nur aktive Items)
+        $statusFilter = $request->get('status', 'aktiv');
+        if ($statusFilter === 'archiviert') {
+            $query->where('status', '!=', 'aktiv');
+        } elseif ($statusFilter !== 'alle') {
+            $query->where('status', $statusFilter);
+        }
+
         if ($request->has('search')) {
             $query->search($request->search);
         }

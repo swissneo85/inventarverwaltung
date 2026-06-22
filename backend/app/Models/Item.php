@@ -11,6 +11,8 @@ class Item extends Model
 {
     use HasFactory, DeletesMedia;
 
+    const STATUS_VALUES = ['aktiv', 'entsorgt', 'verkauft', 'verschenkt', 'verloren', 'defekt_entsorgt'];
+
     protected $fillable = [
         'name',
         'description',
@@ -31,6 +33,8 @@ class Item extends Model
         'unit',
         'condition',
         'status',
+        'status_datum',
+        'status_notiz',
         'notes',
         'purchased_at',
         'warranty_until',
@@ -45,6 +49,10 @@ class Item extends Model
         'qr_token',
     ];
 
+    protected $attributes = [
+        'status' => 'aktiv',
+    ];
+
     protected $casts = [
         'is_in_inbox' => 'boolean',
         'invoice_present' => 'boolean',
@@ -52,6 +60,7 @@ class Item extends Model
         'purchase_price' => 'decimal:2',
         'purchased_at' => 'date',
         'warranty_until' => 'date',
+        'status_datum' => 'date',
         'room_id' => 'integer',
         'box_id' => 'integer',
         'category_id' => 'integer',
@@ -259,6 +268,16 @@ class Item extends Model
     /**
      * Scopes
      */
+    public function scopeAktiv($query)
+    {
+        return $query->where('status', 'aktiv');
+    }
+
+    public function scopeArchiviert($query)
+    {
+        return $query->where('status', '!=', 'aktiv');
+    }
+
     public function scopeInInbox($query)
     {
         return $query->where('is_in_inbox', true);

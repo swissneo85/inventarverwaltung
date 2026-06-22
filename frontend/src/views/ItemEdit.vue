@@ -79,6 +79,31 @@
             </div>
           </div>
 
+          <!-- Status -->
+          <div class="form-group">
+            <label>Status</label>
+            <select v-model="form.status">
+              <option value="aktiv">Aktiv</option>
+              <option value="entsorgt">Entsorgt</option>
+              <option value="verkauft">Verkauft</option>
+              <option value="verschenkt">Verschenkt</option>
+              <option value="verloren">Verloren</option>
+              <option value="defekt_entsorgt">Defekt / Entsorgt</option>
+            </select>
+          </div>
+
+          <!-- Konditionale Felder bei Status != aktiv -->
+          <div v-if="form.status && form.status !== 'aktiv'" class="form-row status-extra">
+            <div class="form-group">
+              <label>Status-Datum</label>
+              <input v-model="form.status_datum" type="date">
+            </div>
+            <div class="form-group">
+              <label>Notiz zum Status</label>
+              <input v-model="form.status_notiz" type="text" placeholder="z.B. an Nachbarn verkauft für 20.–">
+            </div>
+          </div>
+
           <!-- Besitzer / Ausgeliehen an -->
           <div class="form-row">
             <div class="form-group">
@@ -321,6 +346,9 @@ const form = ref({
   person_id: '',
   loaned_to_person_id: '',
   condition: '',
+  status: 'aktiv',
+  status_datum: '',
+  status_notiz: '',
   brand: '',
   model: '',
   serial_number: '',
@@ -371,6 +399,9 @@ onMounted(async () => {
         person_id: item.person_id ?? '',
         loaned_to_person_id: item.loaned_to_person_id ?? '',
         condition: item.condition ?? '',
+        status: item.status ?? 'aktiv',
+        status_datum: item.status_datum ? item.status_datum.substring(0, 10) : '',
+        status_notiz: item.status_notiz ?? '',
         brand: item.brand ?? '',
         model: item.model ?? '',
         serial_number: item.serial_number ?? '',
@@ -499,6 +530,8 @@ function buildPayload() {
     loaned_to_person_id: nullify(f.loaned_to_person_id),
     room_id: nullify(f.room_id),
     box_id: nullify(f.box_id),
+    status_datum: nullify(f.status_datum),
+    status_notiz: nullify(f.status_notiz),
   }
   payload.is_in_inbox = !payload.room_id && !payload.box_id
   return payload
@@ -660,6 +693,14 @@ async function save() {
   p { margin: 0 0 1.25rem; font-size: 1rem; color: #111827; }
 }
 .confirm-actions { display: flex; gap: 0.75rem; justify-content: center; }
+
+.status-extra {
+  background: #f9fafb;
+  border-radius: 8px;
+  padding: 0.75rem;
+  border: 1px solid #e5e7eb;
+  margin-top: -0.5rem;
+}
 
 @media (max-width: 767px) {
   .form-card { padding: 1rem; }

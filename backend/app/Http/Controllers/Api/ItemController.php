@@ -29,6 +29,18 @@ class ItemController extends BaseApiController
             }
         }
 
+        // Status-Filter (Default: nur aktive Items)
+        $allowedStatusFilters = array_merge(['alle', 'archiviert'], Item::STATUS_VALUES);
+        $statusFilter = $request->get('status', 'aktiv');
+        if (!in_array($statusFilter, $allowedStatusFilters)) {
+            return $this->error('Ungültiger Status-Filter. Erlaubt: ' . implode(', ', $allowedStatusFilters), 422);
+        }
+        if ($statusFilter === 'archiviert') {
+            $query->archiviert();
+        } elseif ($statusFilter !== 'alle') {
+            $query->where('status', $statusFilter);
+        }
+
         // Filter
         if ($request->has('room_id')) {
             $query->where('room_id', $request->room_id);
@@ -162,9 +174,11 @@ class ItemController extends BaseApiController
             'quantity' => 'nullable|numeric|min:0',
             'unit' => 'nullable|string|max:50',
             'condition' => 'nullable|string|max:100',
-            'status' => 'nullable|string|max:100',
+            'status' => 'nullable|in:' . implode(',', Item::STATUS_VALUES),
+            'status_datum' => 'nullable|date',
+            'status_notiz' => 'nullable|string',
             'notes' => 'nullable|string',
-            
+
             // Kaufdaten
             'purchased_at' => 'nullable|date',
             'warranty_until' => 'nullable|date',
@@ -239,9 +253,11 @@ class ItemController extends BaseApiController
             'quantity' => 'nullable|numeric|min:0',
             'unit' => 'nullable|string|max:50',
             'condition' => 'nullable|string|max:100',
-            'status' => 'nullable|string|max:100',
+            'status' => 'nullable|in:' . implode(',', Item::STATUS_VALUES),
+            'status_datum' => 'nullable|date',
+            'status_notiz' => 'nullable|string',
             'notes' => 'nullable|string',
-            
+
             'purchased_at' => 'nullable|date',
             'warranty_until' => 'nullable|date',
             'purchase_price' => 'nullable|numeric|min:0',
