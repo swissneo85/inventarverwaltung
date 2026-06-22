@@ -29,9 +29,10 @@ class SearchController extends BaseApiController
             return $this->findByDisplayId($matches[1], $matches[2]);
         }
 
-        // Items suchen
+        // Items suchen (nur aktive Items)
         if ($type === 'all' || $type === 'items') {
             $items = Item::with(['category', 'room', 'box'])
+                ->aktiv()
                 ->search($term)
                 ->orderBy('name')
                 ->limit(20)
@@ -145,8 +146,9 @@ class SearchController extends BaseApiController
         $term = $request->q;
         $results = [];
 
-        // Items (Name, Beschreibung, Seriennummer, Modell, Hersteller)
-        $items = Item::search($term)
+        // Items (nur aktive, Name, Beschreibung, Seriennummer, Modell, Hersteller)
+        $items = Item::aktiv()
+            ->search($term)
             ->limit(10)
             ->get(['id', 'name'])
             ->map(function ($item) {

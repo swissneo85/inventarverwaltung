@@ -27,13 +27,24 @@
           />
         </div>
         
+        <select v-model="filters.status" @change="fetchItems" class="filter-select">
+          <option value="aktiv">Nur aktiv</option>
+          <option value="archiviert">Archiviert</option>
+          <option value="alle">Alle</option>
+          <option value="entsorgt">Entsorgt</option>
+          <option value="verkauft">Verkauft</option>
+          <option value="verschenkt">Verschenkt</option>
+          <option value="verloren">Verloren</option>
+          <option value="defekt_entsorgt">Defekt / Entsorgt</option>
+        </select>
+
         <select v-model="filters.category_id" @change="fetchItems" class="filter-select">
           <option value="">Alle Kategorien</option>
           <option v-for="cat in visibleCategories" :key="cat.id" :value="cat.id">
             {{ cat.name }}
           </option>
         </select>
-        
+
         <select v-model="filters.room_id" @change="fetchItems" class="filter-select">
           <option value="">Alle Räume</option>
           <option v-for="room in rooms" :key="room.id" :value="room.id">
@@ -274,6 +285,7 @@ const viewMode = ref(localStorage.getItem(STORAGE_KEY) || 'list')
 watch(viewMode, val => localStorage.setItem(STORAGE_KEY, val))
 const searchQuery = ref('')
 const filters = ref({
+  status: 'aktiv',
   category_id: '',
   room_id: '',
   in_inbox: false,
@@ -320,9 +332,10 @@ async function fetchItems() {
       page: pagination.value.current_page,
       per_page: pagination.value.per_page,
     }
-    
-    // Remove empty filters
+
+    // Remove empty filters (but keep status – always send it explicitly)
     Object.keys(params).forEach(key => {
+      if (key === 'status') return
       if (params[key] === '' || params[key] === false || params[key] === undefined) {
         delete params[key]
       }

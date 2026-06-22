@@ -16,6 +16,13 @@
     <div v-if="loading" class="loading">Wird geladen...</div>
 
     <div v-else-if="item">
+      <!-- Archivierungs-Banner -->
+      <div v-if="item.status && item.status !== 'aktiv'" :class="['status-banner', statusBannerClass(item.status)]">
+        <span class="status-banner-label">{{ statusLabel(item.status) }}</span>
+        <span v-if="item.status_datum"> · {{ formatDate(item.status_datum) }}</span>
+        <span v-if="item.status_notiz" class="status-banner-notiz"> · {{ item.status_notiz }}</span>
+      </div>
+
       <!-- Images first -->
       <div class="card detail-card" v-if="imageCount !== 0">
         <ImageGallery type="items" :model-id="id" :readonly="true" @loaded="n => imageCount = n" />
@@ -37,6 +44,9 @@
         <div class="detail-row"><span>Zustand</span>
           <span v-if="item.condition" :class="['condition-badge', conditionClass(item.condition)]">{{ item.condition }}</span>
           <span v-else>–</span>
+        </div>
+        <div class="detail-row"><span>Status</span>
+          <span :class="['status-badge', statusBannerClass(item.status)]">{{ statusLabel(item.status) }}</span>
         </div>
         <div class="detail-row"><span>Marke</span><span>{{ item.brand || '–' }}</span></div>
         <div class="detail-row"><span>Modell</span><span>{{ item.model || '–' }}</span></div>
@@ -110,6 +120,31 @@ const locationText = computed(() => {
 function conditionClass(condition) {
   const map = { 'Neu': 'cond-new', 'Gut': 'cond-good', 'Gebraucht': 'cond-used', 'Defekt': 'cond-broken' }
   return map[condition] || 'cond-default'
+}
+
+const STATUS_LABELS = {
+  'aktiv': 'Aktiv',
+  'entsorgt': 'Entsorgt',
+  'verkauft': 'Verkauft',
+  'verschenkt': 'Verschenkt',
+  'verloren': 'Verloren',
+  'defekt_entsorgt': 'Defekt / Entsorgt',
+}
+
+function statusLabel(status) {
+  return STATUS_LABELS[status] || status || 'Aktiv'
+}
+
+function statusBannerClass(status) {
+  const map = {
+    'aktiv': 'status-aktiv',
+    'entsorgt': 'status-entsorgt',
+    'defekt_entsorgt': 'status-entsorgt',
+    'verloren': 'status-verloren',
+    'verkauft': 'status-verkauft',
+    'verschenkt': 'status-verkauft',
+  }
+  return map[status] || 'status-default'
 }
 
 function formatDate(val) {
@@ -186,6 +221,34 @@ onMounted(loadItem)
 .cond-used    { background: #fef3c7; color: #92400e; }
 .cond-broken  { background: #fee2e2; color: #991b1b; }
 .cond-default { background: #f3f4f6; color: #6b7280; }
+
+.status-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+.status-banner-label { font-weight: 700; }
+.status-banner-notiz { font-weight: 400; font-style: italic; }
+
+.status-badge {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 99px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.status-aktiv    { background: #d1fae5; color: #065f46; }
+.status-entsorgt { background: #f3f4f6; color: #374151; }
+.status-verloren { background: #fee2e2; color: #991b1b; }
+.status-verkauft { background: #e0f2fe; color: #075985; }
+.status-default  { background: #f3f4f6; color: #6b7280; }
 
 .loading { padding: 2rem; text-align: center; color: #6b7280; }
 

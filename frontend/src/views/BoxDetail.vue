@@ -142,7 +142,7 @@ onMounted(async () => {
   try {
     const [boxRes, itemsRes] = await Promise.all([
       api.get(`/boxes/${id}`),
-      api.get(`/boxes/${id}/items`)
+      api.get(`/boxes/${id}/items`, { params: { status: 'aktiv', per_page: 200 } })
     ])
     box.value = boxRes.data.data
     items.value = itemsRes.data.data?.data || itemsRes.data.data

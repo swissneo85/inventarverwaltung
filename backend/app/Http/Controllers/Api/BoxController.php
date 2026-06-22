@@ -140,20 +140,19 @@ class BoxController extends BaseApiController
             return $this->error('Box nicht gefunden', 404);
         }
 
+        // Alle Items zählen (inkl. archivierte), damit keine archivierten Items ohne Kontext verloren gehen
         $itemsCount = $box->items()->count();
-        
+
         if ($itemsCount > 0) {
-            // Items in die Inbox verschieben
-            $box->items()->update([
-                'box_id' => null,
-                'room_id' => null,
-                'is_in_inbox' => true
-            ]);
+            return $this->error(
+                "Box ist nicht leer – bitte zuerst Inhalt verschieben oder entfernen. ({$itemsCount} Items vorhanden)",
+                400
+            );
         }
 
         $box->delete();
 
-        return $this->success(['moved_to_inbox' => $itemsCount], 'Box gelöscht');
+        return $this->success(null, 'Box gelöscht');
     }
 
     /**
@@ -229,7 +228,15 @@ class BoxController extends BaseApiController
         }
 
         $query = $box->items()->with(['category', 'coverImage']);
-        
+
+        // Status-Filter (Default: nur aktive Items)
+        $statusFilter = $request->get('status', 'aktiv');
+        if ($statusFilter === 'archiviert') {
+            $query->where('status', '!=', 'aktiv');
+        } elseif ($statusFilter !== 'alle') {
+            $query->where('status', $statusFilter);
+        }
+
         if ($request->has('search')) {
             $query->search($request->search);
         }
