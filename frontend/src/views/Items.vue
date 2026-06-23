@@ -136,7 +136,11 @@
         <div class="gallery-img-wrap">
           <img v-if="item.cover_image" :src="item.cover_image.url" :alt="item.name" class="gallery-img">
           <div v-else class="gallery-placeholder">
-            <span>{{ item.display_id || 'I' + item.id }}</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+              <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+              <line x1="12" y1="22.08" x2="12" y2="12"></line>
+            </svg>
           </div>
         </div>
         <div class="gallery-info">
@@ -530,7 +534,7 @@ function conditionClass(condition) {
 
 .gallery-img-wrap {
   width: 100%;
-  aspect-ratio: 1 / 1;
+  aspect-ratio: 4 / 3;
   overflow: hidden;
   background: #f3f4f6;
 }
@@ -539,6 +543,7 @@ function conditionClass(condition) {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center;
   display: block;
 }
 
@@ -549,12 +554,7 @@ function conditionClass(condition) {
   align-items: center;
   justify-content: center;
   background: #dbeafe;
-
-  span {
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: #3b82f6;
-  }
+  color: #3b82f6;
 }
 
 .gallery-info {
