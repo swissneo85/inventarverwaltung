@@ -133,11 +133,8 @@
         :to="`/items/${item.id}`"
         class="gallery-card"
       >
-        <div class="gallery-img-wrap">
-          <template v-if="item.cover_image">
-            <img :src="item.cover_image.url" aria-hidden="true" class="gallery-img-blur">
-            <img :src="item.cover_image.url" :alt="item.name" class="gallery-img">
-          </template>
+        <div class="gallery-img-wrap" :style="item.cover_image ? { background: colorMap[item.cover_image.url] || '#f3f4f6' } : {}">
+          <img v-if="item.cover_image" :src="item.cover_image.url" :alt="item.name" class="gallery-img">
           <div v-else class="gallery-placeholder">
             <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
               <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
@@ -274,6 +271,7 @@ import api from '@/services/api'
 import ItemCard from '@/components/ItemCard.vue'
 import { debounce } from 'lodash'
 import { useAuthStore } from '@/stores/auth'
+import { extractImageColor } from '@/composables/useImageColor'
 
 const STORAGE_KEY = 'items-view-mode'
 
@@ -285,6 +283,16 @@ const canEdit = computed(() => authStore.isEditor)
 const items = ref([])
 const categories = ref([])
 const rooms = ref([])
+const colorMap = ref({})
+
+watch(items, (newItems) => {
+  for (const item of newItems) {
+    const url = item.cover_image?.url
+    if (url && !colorMap.value[url]) {
+      extractImageColor(url).then(color => { colorMap.value[url] = color })
+    }
+  }
+}, { immediate: true })
 
 const visibleCategories = computed(() => {
   const perms = authStore.categoryPermissions
@@ -540,19 +548,6 @@ function conditionClass(condition) {
   aspect-ratio: 4 / 3;
   overflow: hidden;
   background: #f3f4f6;
-  position: relative;
-}
-
-.gallery-img-blur {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center;
-  display: block;
-  filter: blur(20px) brightness(0.85);
-  transform: scale(1.1);
 }
 
 .gallery-img {
@@ -561,8 +556,6 @@ function conditionClass(condition) {
   object-fit: contain;
   object-position: center;
   display: block;
-  position: relative;
-  z-index: 1;
 }
 
 .gallery-placeholder {
