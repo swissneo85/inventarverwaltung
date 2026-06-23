@@ -317,7 +317,7 @@ const pagination = ref({
   current_page: 1,
   last_page: 1,
   total: 0,
-  per_page: 50,
+  per_page: 500,
 })
 
 onMounted(async () => {

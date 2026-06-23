@@ -237,7 +237,7 @@ const handleSearch = debounce(fetchBoxes, 300)
 async function fetchBoxes() {
   loading.value = true
   try {
-    const params = search.value ? { search: search.value } : {}
+    const params = { per_page: 500, ...(search.value ? { search: search.value } : {}) }
     const res = await api.get('/boxes', { params })
     boxes.value = res.data.data?.data || res.data.data
   } catch {
