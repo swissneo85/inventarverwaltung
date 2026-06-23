@@ -2,9 +2,10 @@
 const colorCache = new Map()
 
 /**
- * Extracts the average color of an image via a 20×20 Canvas sample.
- * Uses a dedicated img element with crossOrigin='anonymous' so it doesn't
- * taint any visible img element. Falls back to '#f3f4f6' on CORS/load errors.
+ * Extracts the average color of the BORDER pixels of an image via Canvas.
+ * Samples only the outermost ring of a 20×20 downscale (~19% of pixels),
+ * so the result matches the edge tone rather than the centre subject.
+ * Falls back to '#f3f4f6' on CORS/load errors.
  */
 export function extractImageColor(url) {
   if (colorCache.has(url)) return Promise.resolve(colorCache.get(url))
@@ -15,15 +16,21 @@ export function extractImageColor(url) {
 
     img.onload = () => {
       try {
+        const W = 20, H = 20
         const canvas = document.createElement('canvas')
-        canvas.width = 20
-        canvas.height = 20
+        canvas.width = W
+        canvas.height = H
         const ctx = canvas.getContext('2d')
-        ctx.drawImage(img, 0, 0, 20, 20)
-        const { data } = ctx.getImageData(0, 0, 20, 20)
+        ctx.drawImage(img, 0, 0, W, H)
+        const { data } = ctx.getImageData(0, 0, W, H)
         let r = 0, g = 0, b = 0, n = 0
-        for (let i = 0; i < data.length; i += 4) {
-          if (data[i + 3] > 64) { r += data[i]; g += data[i + 1]; b += data[i + 2]; n++ }
+        for (let y = 0; y < H; y++) {
+          for (let x = 0; x < W; x++) {
+            if (y === 0 || y === H - 1 || x === 0 || x === W - 1) {
+              const i = (y * W + x) * 4
+              if (data[i + 3] > 64) { r += data[i]; g += data[i + 1]; b += data[i + 2]; n++ }
+            }
+          }
         }
         const color = n > 0
           ? `rgb(${Math.round(r / n)}, ${Math.round(g / n)}, ${Math.round(b / n)})`
