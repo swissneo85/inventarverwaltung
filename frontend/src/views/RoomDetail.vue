@@ -81,7 +81,9 @@
             <div class="gallery-img-wrap">
               <img v-if="box.cover_image" :src="box.cover_image.url" :alt="box.name" class="gallery-img">
               <div v-else class="gallery-placeholder box-ph">
-                <span>B{{ box.id }}</span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                </svg>
               </div>
             </div>
             <div class="gallery-info">
@@ -161,7 +163,11 @@
             <div class="gallery-img-wrap">
               <img v-if="item.cover_image" :src="item.cover_image.url" :alt="item.name" class="gallery-img">
               <div v-else class="gallery-placeholder">
-                <span>{{ item.display_id || 'I' + item.id }}</span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                  <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                  <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                </svg>
               </div>
             </div>
             <div class="gallery-info">
@@ -349,21 +355,21 @@ onMounted(async () => {
 
 .gallery-img-wrap {
   width: 100%;
-  aspect-ratio: 1 / 1;
+  aspect-ratio: 4 / 3;
   overflow: hidden;
   background: #f3f4f6;
 }
 
-.gallery-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.gallery-img { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; }
 
 .gallery-placeholder {
   width: 100%; height: 100%;
   display: flex; align-items: center; justify-content: center;
   background: #dbeafe;
-  span { font-size: 0.7rem; font-weight: 700; color: #3b82f6; }
+  color: #3b82f6;
 }
 
-.box-ph { background: #fef3c7; span { color: #d97706; } }
+.box-ph { background: #fef3c7; color: #d97706; }
 
 .gallery-info { padding: 0.5rem; display: flex; flex-direction: column; gap: 0.15rem; }
 .gallery-id { font-size: 0.65rem; font-weight: 600; color: #3b82f6; }

@@ -330,9 +330,9 @@ async function doDelete() {
   transition: box-shadow 0.2s, transform 0.2s; display: flex; flex-direction: column;
   &:hover { box-shadow: 0 6px 16px rgba(0,0,0,0.12); transform: translateY(-2px); }
 }
-.gallery-img-wrap { width: 100%; aspect-ratio: 1; overflow: hidden; background: #f3f4f6; }
-.gallery-img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.gallery-placeholder { width: 100%; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; }
+.gallery-img-wrap { width: 100%; aspect-ratio: 4 / 3; overflow: hidden; background: #f3f4f6; }
+.gallery-img { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; }
+.gallery-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
 .box-placeholder { background: #f5f3ff; color: #7c3aed; }
 .gallery-info { padding: 0.75rem; }
 .gallery-id { font-size: 0.7rem; font-weight: 600; color: #7c3aed; }

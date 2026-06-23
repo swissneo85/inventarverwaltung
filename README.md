@@ -51,6 +51,19 @@ docker compose up -d
 
 ---
 
+## Erste Schritte nach der Installation
+
+Nach dem ersten Start legt der Datenbank-Seeder automatisch einen Admin-Account an:
+
+| Feld | Wert |
+|------|------|
+| Benutzername | `admin` |
+| Passwort | `admin123` |
+
+> ⚠️ **Bitte das Passwort nach dem ersten Login umgehend ändern!**
+
+---
+
 ## Update
 
 ```bash
