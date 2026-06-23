@@ -85,7 +85,10 @@
       <div v-else-if="viewMode === 'gallery'" class="gallery-view">
         <router-link v-for="room in rooms" :key="room.id" :to="`/rooms/${room.id}`" class="gallery-card">
           <div class="gallery-img-wrap">
-            <img v-if="room.cover_image" :src="room.cover_image.url" :alt="room.name" class="gallery-img">
+            <template v-if="room.cover_image">
+              <img :src="room.cover_image.url" aria-hidden="true" class="gallery-img-blur">
+              <img :src="room.cover_image.url" :alt="room.name" class="gallery-img">
+            </template>
             <div v-else class="gallery-placeholder room-placeholder">
               <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                 <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
@@ -290,8 +293,9 @@ async function deleteRoom() {
   transition: box-shadow 0.2s, transform 0.2s; display: flex; flex-direction: column;
   &:hover { box-shadow: 0 6px 16px rgba(0,0,0,0.12); transform: translateY(-2px); }
 }
-.gallery-img-wrap { width: 100%; aspect-ratio: 4 / 3; overflow: hidden; background: #f3f4f6; }
-.gallery-img { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; }
+.gallery-img-wrap { width: 100%; aspect-ratio: 4 / 3; overflow: hidden; background: #f3f4f6; position: relative; }
+.gallery-img-blur { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; filter: blur(20px) brightness(0.85); transform: scale(1.1); }
+.gallery-img { width: 100%; height: 100%; object-fit: contain; object-position: center; display: block; position: relative; z-index: 1; }
 .gallery-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
 .room-placeholder { background: #fef9ec; color: #d97706; }
 .gallery-info { padding: 0.75rem; }
