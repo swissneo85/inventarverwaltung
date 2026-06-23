@@ -2,10 +2,9 @@
 const colorCache = new Map()
 
 /**
- * Extracts the average color of the BORDER pixels of an image via Canvas.
- * Samples only the outermost ring of a 20×20 downscale (~19% of pixels),
- * so the result matches the edge tone rather than the centre subject.
- * Falls back to '#f3f4f6' on CORS/load errors.
+ * Extracts the average color of the border region of an image via Canvas.
+ * Renders to 100×100 and samples the outer 3px strip (~3% per edge), so
+ * even thin original borders survive the downscale. Falls back to '#f3f4f6'.
  */
 export function extractImageColor(url) {
   if (colorCache.has(url)) return Promise.resolve(colorCache.get(url))
@@ -16,7 +15,7 @@ export function extractImageColor(url) {
 
     img.onload = () => {
       try {
-        const W = 20, H = 20
+        const W = 100, H = 100, B = 3
         const canvas = document.createElement('canvas')
         canvas.width = W
         canvas.height = H
@@ -26,7 +25,7 @@ export function extractImageColor(url) {
         let r = 0, g = 0, b = 0, n = 0
         for (let y = 0; y < H; y++) {
           for (let x = 0; x < W; x++) {
-            if (y === 0 || y === H - 1 || x === 0 || x === W - 1) {
+            if (y < B || y >= H - B || x < B || x >= W - B) {
               const i = (y * W + x) * 4
               if (data[i + 3] > 64) { r += data[i]; g += data[i + 1]; b += data[i + 2]; n++ }
             }
