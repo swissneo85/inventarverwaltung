@@ -3,8 +3,9 @@ const colorCache = new Map()
 
 /**
  * Extracts the average color of the border region of an image via Canvas.
- * Renders to 100×100 and samples the outer 3px strip (~3% per edge), so
- * even thin original borders survive the downscale. Falls back to '#f3f4f6'.
+ * Renders to 100×100 and samples only the outermost 1px strip at each edge,
+ * so even a hairline original border dominates the average without nearby
+ * darker pixels bleeding in. Falls back to '#f3f4f6'.
  */
 export function extractImageColor(url) {
   if (colorCache.has(url)) return Promise.resolve(colorCache.get(url))
@@ -15,7 +16,7 @@ export function extractImageColor(url) {
 
     img.onload = () => {
       try {
-        const W = 100, H = 100, B = 3
+        const W = 100, H = 100, B = 1
         const canvas = document.createElement('canvas')
         canvas.width = W
         canvas.height = H
