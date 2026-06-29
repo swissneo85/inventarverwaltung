@@ -65,6 +65,15 @@
             </div>
           </div>
 
+          <!-- Kaufpreis sichtbar (nur Admin) -->
+          <div v-if="authStore.isAdmin" class="form-group form-group--checkbox">
+            <label class="checkbox-label">
+              <input v-model="form.kaufpreis_sichtbar" type="checkbox" />
+              <span>Kaufpreis sichtbar</span>
+            </label>
+            <p class="field-hint">Ob dieser Benutzer den Kaufpreis von Gegenständen sehen darf.</p>
+          </div>
+
           <!-- Aktiv (nur Admin) -->
           <div v-if="authStore.isAdmin && isEdit" class="form-group form-group--checkbox">
             <label class="checkbox-label">
@@ -159,6 +168,7 @@ const form = ref({
   email: '',
   role: 'viewer',
   active: true,
+  kaufpreis_sichtbar: false,
   password: '',
   passwordConfirm: '',
 })
@@ -190,6 +200,7 @@ onMounted(async () => {
       email: u.email || '',
       role: u.role,
       active: u.active,
+      kaufpreis_sichtbar: u.kaufpreis_sichtbar ?? false,
       password: '',
       passwordConfirm: '',
     }
@@ -217,6 +228,7 @@ async function save() {
 
     if (authStore.isAdmin) {
       payload.role = form.value.role
+      payload.kaufpreis_sichtbar = form.value.kaufpreis_sichtbar
       if (isEdit.value) payload.active = form.value.active
     }
 

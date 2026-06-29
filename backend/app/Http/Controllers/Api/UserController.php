@@ -51,6 +51,7 @@ class UserController extends BaseApiController
             'role' => 'required|in:admin,editor,viewer',
             'categories' => 'nullable|array',
             'categories.*' => 'exists:categories,id',
+            'kaufpreis_sichtbar' => 'nullable|boolean',
         ]);
 
         $user = User::create([
@@ -60,6 +61,9 @@ class UserController extends BaseApiController
             'password' => Hash::make($request->password),
             'role' => $request->role,
             'active' => true,
+            'kaufpreis_sichtbar' => $request->has('kaufpreis_sichtbar')
+                ? $request->boolean('kaufpreis_sichtbar')
+                : ($request->role === 'admin'),
         ]);
 
         if ($request->has('categories') && $request->role !== 'admin') {
@@ -115,6 +119,7 @@ class UserController extends BaseApiController
             $rules['active'] = 'sometimes|boolean';
             $rules['categories'] = 'nullable|array';
             $rules['categories.*'] = 'exists:categories,id';
+            $rules['kaufpreis_sichtbar'] = 'sometimes|boolean';
         }
 
         // Passwort nur wenn angegeben
@@ -125,6 +130,10 @@ class UserController extends BaseApiController
         $request->validate($rules);
 
         $updateData = $request->only(['name', 'email', 'role', 'active']);
+
+        if ($request->user()->isAdmin() && $request->has('kaufpreis_sichtbar')) {
+            $updateData['kaufpreis_sichtbar'] = $request->boolean('kaufpreis_sichtbar');
+        }
         
         if ($request->has('password') && $request->password) {
             $updateData['password'] = Hash::make($request->password);

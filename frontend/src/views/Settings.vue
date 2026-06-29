@@ -163,6 +163,7 @@ import { ref, computed, onMounted } from 'vue'
 import api from '@/services/api'
 import { useToast } from 'vue-toastification'
 import { useAuthStore } from '@/stores/auth'
+import { formatDateTime } from '@/utils/dateFormat'
 
 const toast = useToast()
 const authStore = useAuthStore()
@@ -300,15 +301,7 @@ async function doRestore() {
 }
 
 function formatDate(iso) {
-  if (!iso) return '—'
-  try {
-    return new Date(iso).toLocaleString('de-CH', {
-      day: '2-digit', month: '2-digit', year: 'numeric',
-      hour: '2-digit', minute: '2-digit',
-    })
-  } catch {
-    return iso
-  }
+  return formatDateTime(iso) || '—'
 }
 </script>
 
