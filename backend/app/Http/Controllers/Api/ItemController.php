@@ -104,6 +104,7 @@ class ItemController extends BaseApiController
         }
 
         $items = $query->orderBy('name')->paginate($request->get('per_page', 50));
+        $this->hidePriceIfNeeded($items);
 
         return $this->success($items);
     }
@@ -139,6 +140,7 @@ class ItemController extends BaseApiController
             ->where('is_in_inbox', true)
             ->orderBy('created_at', 'desc')
             ->paginate($request->get('per_page', 50));
+        $this->hidePriceIfNeeded($items);
 
         return $this->success($items);
     }
@@ -213,8 +215,10 @@ class ItemController extends BaseApiController
         }
 
         $item = Item::create($validated);
+        $item->load(['category', 'person', 'loanedToPerson', 'room', 'box']);
+        $this->hidePriceIfNeeded($item);
 
-        return $this->success($item->load(['category', 'person', 'loanedToPerson', 'room', 'box']), 'Item erstellt', 201);
+        return $this->success($item, 'Item erstellt', 201);
     }
 
     /**
@@ -236,6 +240,7 @@ class ItemController extends BaseApiController
             'childItems' => fn($q) => $q->with(['category', 'coverImage'])->orderBy('name'),
         ]);
         $item->qr_code_image = $item->qr_token ? $item->getQrCodeImageBase64() : null;
+        $this->hidePriceIfNeeded($item);
 
         return $this->success($item);
     }
@@ -335,8 +340,10 @@ class ItemController extends BaseApiController
         }
 
         $item->update($validated);
+        $item->load(['category', 'person', 'loanedToPerson', 'room', 'box']);
+        $this->hidePriceIfNeeded($item);
 
-        return $this->success($item->load(['category', 'person', 'loanedToPerson', 'room', 'box']), 'Item aktualisiert');
+        return $this->success($item, 'Item aktualisiert');
     }
 
     /**
@@ -375,6 +382,7 @@ class ItemController extends BaseApiController
                 'parentItem.room', 'parentItem.box.room'])
             ->orderBy('name')
             ->get();
+        $this->hidePriceIfNeeded($items);
 
         return $this->success($items);
     }
@@ -500,9 +508,11 @@ class ItemController extends BaseApiController
 
         $item = Item::findByQrToken($request->token);
         if ($item) {
+            $item->load(['category', 'room', 'box']);
+            $this->hidePriceIfNeeded($item);
             return $this->success([
                 'type' => 'item',
-                'data' => $item->load(['category', 'room', 'box']),
+                'data' => $item,
             ]);
         }
 
@@ -515,5 +525,18 @@ class ItemController extends BaseApiController
         }
 
         return $this->error('QR-Code nicht gefunden', 404);
+    }
+
+    private function hidePriceIfNeeded(mixed $data): void
+    {
+        if (auth()->user()->canViewKaufpreis()) return;
+
+        if ($data instanceof \Illuminate\Pagination\LengthAwarePaginator) {
+            $data->getCollection()->each->makeHidden('purchase_price');
+        } elseif ($data instanceof \Illuminate\Support\Collection) {
+            $data->each->makeHidden('purchase_price');
+        } elseif ($data instanceof Item) {
+            $data->makeHidden('purchase_price');
+        }
     }
 }

@@ -126,7 +126,7 @@
 
           <!-- Kaufpreis / Kaufdatum -->
           <div class="form-row">
-            <div class="form-group">
+            <div v-if="authStore.canViewKaufpreis" class="form-group">
               <label>Kaufpreis (CHF)</label>
               <input v-model="form.purchase_price" type="number" min="0" step="0.01">
             </div>
@@ -194,6 +194,7 @@ import { ref, onMounted } from 'vue'
 import api from '@/services/api'
 import { useToast } from 'vue-toastification'
 import ImageGallery from '@/components/ImageGallery.vue'
+import { useAuthStore } from '@/stores/auth'
 
 const props = defineProps({
   itemId: { type: [Number, String], default: null }
@@ -201,6 +202,7 @@ const props = defineProps({
 const emit = defineEmits(['close', 'saved'])
 
 const toast = useToast()
+const authStore = useAuthStore()
 
 const loading = ref(false)
 const saving = ref(false)

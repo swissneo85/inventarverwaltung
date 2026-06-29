@@ -122,6 +122,7 @@ import { useToast } from 'vue-toastification'
 import ImageGallery from '@/components/ImageGallery.vue'
 import DocumentGallery from '@/components/DocumentGallery.vue'
 import { useAuthStore } from '@/stores/auth'
+import { formatDate } from '@/utils/dateFormat'
 
 const route = useRoute()
 const router = useRouter()
@@ -173,10 +174,6 @@ function statusBannerClass(status) {
   return map[status] || 'status-default'
 }
 
-function formatDate(val) {
-  if (!val) return '–'
-  return new Date(val).toLocaleDateString('de-CH')
-}
 
 async function loadItem() {
   loading.value = true

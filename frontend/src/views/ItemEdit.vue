@@ -231,7 +231,7 @@
 
           <!-- Kaufpreis / Kaufdatum -->
           <div class="form-row">
-            <div class="form-group">
+            <div v-if="authStore.canViewKaufpreis" class="form-group">
               <label>Kaufpreis (CHF)</label>
               <input v-model="form.purchase_price" type="number" min="0" step="0.01">
             </div>

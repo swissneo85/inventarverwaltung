@@ -19,6 +19,7 @@ class User extends Authenticatable
         'role',
         'active',
         'last_login_at',
+        'kaufpreis_sichtbar',
     ];
 
     protected $hidden = [
@@ -31,6 +32,7 @@ class User extends Authenticatable
         'password' => 'hashed',
         'active' => 'boolean',
         'last_login_at' => 'datetime',
+        'kaufpreis_sichtbar' => 'boolean',
     ];
 
     const ROLE_ADMIN = 'admin';
@@ -55,6 +57,11 @@ class User extends Authenticatable
     public function canDelete(): bool
     {
         return $this->isAdmin();
+    }
+
+    public function canViewKaufpreis(): bool
+    {
+        return $this->isAdmin() || (bool) $this->kaufpreis_sichtbar;
     }
 
     public function categories()

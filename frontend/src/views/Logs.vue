@@ -31,13 +31,14 @@
 import { ref, onMounted } from 'vue'
 import api from '@/services/api'
 import { useToast } from 'vue-toastification'
+import { formatDateTime } from '@/utils/dateFormat'
 
 const toast = useToast()
 const logs = ref([])
 const loading = ref(true)
 
 function formatTime(date) {
-  return new Date(date).toLocaleString('de-CH')
+  return formatDateTime(date)
 }
 
 onMounted(async () => {
