@@ -1,27 +1,31 @@
-# Inventarverwaltung (Hostinger Edition)
+# Inventarverwaltung
 
 Webbasierte Inventarverwaltung mit Vue.js Frontend und Laravel Backend.  
-**Optimiert für Hostinger VPS (wenig RAM/CPU).**
+**Leichtgewichtig, läuft auch auf ressourcenbeschränkter Hardware.**
+
+> Ehemals auf Hostinger VPS betrieben, seit 04.07.2026 auf eigenem Proxmox-Server.
 
 ---
 
 ## Deployment-Konfiguration
 
-**Massgebliche Datei für das Hostinger-Deployment: [`deploy/docker-compose.yml`](deploy/docker-compose.yml)**
+**Massgebliche Datei für den produktiven Betrieb: [`deploy/docker-compose.yml`](deploy/docker-compose.yml)**
 
-Diese Datei enthält die vollständige Konfiguration für `inventar.buettler.org` (Traefik,
-Bind-Mounts, kein direktes Port-Mapping). Sie dient als Referenz falls die Konfiguration
-im Hostinger-Panel verloren geht. Den echten `APP_KEY` nicht ins Repo committen – er
-gehört ausschliesslich ins Hostinger-Panel.
+Diese Datei enthält die vollständige Konfiguration für den Betrieb auf einer eigenen
+Proxmox-VM (Debian, Docker) hinter einem Nginx Proxy Manager (NPM) auf einem separaten
+Host. NPM übernimmt TLS-Terminierung und Routing für `inventar.peterb.diskstation.me`
+und leitet auf den Container-Port weiter. Den echten `APP_KEY` nicht ins Repo committen.
 
 Weitere Details zum Deployment: [`deploy/README.md`](deploy/README.md)
 
 ---
 
-## Self-Hosting auf einem eigenen Server
+## Betrieb auf eigenem Server
 
-Wer die App auf einem eigenen Server ohne Traefik betreiben möchte, findet eine
-Vorlage in [`docker-compose.example.yml`](docker-compose.example.yml).
+Der reguläre Betrieb erfolgt auf einem eigenen Server (aktuell eine Proxmox-VM) — siehe
+`deploy/docker-compose.yml` oben. Wer die App auf einer eigenen Infrastruktur ohne diese
+spezifische NPM-Konfiguration betreiben möchte, findet eine generische Vorlage in
+[`docker-compose.example.yml`](docker-compose.example.yml).
 
 ### Kurzanleitung
 
@@ -44,10 +48,24 @@ docker compose up -d
 
 ### Zugriff
 
-- **URL:** `http://DEINE-SERVER-IP:3004`
+- **URL (generische Vorlage):** `http://DEINE-SERVER-IP:3004`
 - **Login:** `admin` / `admin123`
 
 > ⚠️ **Sofort das Passwort ändern nach dem ersten Login!**
+
+Der produktive Zugriff erfolgt ausschliesslich über NPM/HTTPS unter
+`https://inventar.peterb.diskstation.me` (Container-Port `8080`, siehe
+`deploy/docker-compose.yml`) — kein direkter Zugriff auf den Server-Port von aussen.
+
+---
+
+## Storage (Bilder & Dokumente)
+
+Bilder und Dokumente liegen im produktiven Betrieb nicht mehr lokal im
+Container-Volume, sondern auf einem NFS-Mount von einem Synology-NAS
+(`/mnt/nas-inventar` auf dem Host). Details zu den gemounteten Pfaden siehe
+[`deploy/docker-compose.yml`](deploy/docker-compose.yml) und
+[`deploy/README.md`](deploy/README.md).
 
 ---
 
