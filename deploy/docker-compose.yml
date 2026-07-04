@@ -3,15 +3,21 @@ services:
     image: ghcr.io/swissneo85/inventarverwaltung:hostinger
     container_name: inventarverwaltung
     restart: unless-stopped
+    ports:
+      - "8080:80"
+    # /mnt/nas-inventar ist ein NFS-Mount (Synology-NAS) auf dem Host und muss
+    # auf jedem Deployment-Ziel eingerichtet sein, bevor der Container gestartet wird.
     volumes:
       - ./data:/app/data
       - ./storage:/var/www/html/storage
+      - /mnt/nas-inventar/images:/var/www/html/storage/app/public/images
+      - /mnt/nas-inventar/documents:/var/www/html/storage/app/public/documents
     environment:
-      - APP_KEY=<HIER_ECHTEN_KEY_AUS_HOSTINGER_EINTRAGEN>
+      - APP_KEY=<HIER_ECHTEN_KEY_EINTRAGEN>
       - APP_NAME=Inventarverwaltung
       - APP_ENV=production
       - APP_DEBUG=false
-      - APP_URL=https://inventar.buettler.org
+      - APP_URL=https://inventar.peterb.diskstation.me
       - DB_CONNECTION=sqlite
       - DB_DATABASE=/app/data/database.sqlite
       - SESSION_DRIVER=file
@@ -20,10 +26,3 @@ services:
       - QUEUE_CONNECTION=sync
       - LOG_CHANNEL=errorlog
       - LOG_LEVEL=warning
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.inventar.rule=Host(`inventar.buettler.org`)"
-      - "traefik.http.routers.inventar.entrypoints=websecure"
-      - "traefik.http.routers.inventar.tls=true"
-      - "traefik.http.routers.inventar.tls.certresolver=letsencrypt"
-      - "traefik.http.services.inventar.loadbalancer.server.port=80"
