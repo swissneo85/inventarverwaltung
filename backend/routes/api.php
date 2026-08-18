@@ -81,6 +81,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Items
     Route::get('/items', [ItemController::class, 'index']);
     Route::get('/items/field-suggestions', [ItemController::class, 'fieldSuggestions']);
+    Route::get('/items/filter-counts', [ItemController::class, 'filterCounts']);
     Route::get('/items/{id}', [ItemController::class, 'show']);
     Route::get('/items/{id}/images', fn(Request $r, $id) => app(ImageController::class)->index('items', $id));
     Route::get('/items/{id}/documents', [ItemDocumentController::class, 'index']);

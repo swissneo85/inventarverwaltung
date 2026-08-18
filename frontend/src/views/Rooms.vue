@@ -43,7 +43,7 @@
 
       <!-- List View -->
       <div v-if="viewMode === 'list'" class="list-view">
-        <div v-for="room in rooms" :key="room.id" class="list-card" @click="$router.push(`/rooms/${room.id}`)" style="cursor:pointer">
+        <div v-for="room in rooms" :key="room.id" class="list-card" :class="{ 'is-empty': isEmpty(room) }" @click="$router.push(`/rooms/${room.id}`)" style="cursor:pointer">
           <router-link :to="`/rooms/${room.id}`" class="list-thumb" @click.stop>
             <img v-if="room.image_url" :src="room.image_url" :alt="room.name" class="thumb-img">
             <span v-else class="thumb-id">R{{ room.id }}</span>
@@ -55,8 +55,11 @@
           </div>
           <div class="list-footer" @click.stop>
             <div class="list-stats">
-              <span class="stat-chip">{{ room.items_count || 0 }} Items</span>
-              <span class="stat-chip">{{ room.boxes_count || 0 }} Boxen</span>
+              <span v-if="isEmpty(room)" class="stat-chip stat-chip--empty">leer</span>
+              <template v-else>
+                <span class="stat-chip">{{ room.items_count || 0 }} Items</span>
+                <span class="stat-chip">{{ room.boxes_count || 0 }} Boxen</span>
+              </template>
             </div>
             <div class="list-actions">
               <router-link :to="`/rooms/${room.id}`" class="row-btn" title="Ansehen">
@@ -83,7 +86,7 @@
 
       <!-- Gallery View -->
       <div v-else-if="viewMode === 'gallery'" class="gallery-view">
-        <router-link v-for="room in rooms" :key="room.id" :to="`/rooms/${room.id}`" class="gallery-card">
+        <router-link v-for="room in rooms" :key="room.id" :to="`/rooms/${room.id}`" class="gallery-card" :class="{ 'is-empty': isEmpty(room) }">
           <div class="gallery-img-wrap" :style="room.cover_image ? { background: colorMap[room.cover_image.url] || '#f3f4f6' } : {}">
             <img v-if="room.cover_image" :src="room.cover_image.url" :alt="room.name" class="gallery-img">
             <div v-else class="gallery-placeholder room-placeholder">
@@ -96,8 +99,11 @@
             <div class="gallery-id">R{{ room.id }}</div>
             <div class="gallery-name">{{ room.name }}</div>
             <div class="gallery-stats">
-              <span>{{ room.items_count || 0 }} Items</span>
-              <span>{{ room.boxes_count || 0 }} Boxen</span>
+              <span v-if="isEmpty(room)">leer</span>
+              <template v-else>
+                <span>{{ room.items_count || 0 }} Items</span>
+                <span>{{ room.boxes_count || 0 }} Boxen</span>
+              </template>
             </div>
           </div>
         </router-link>
@@ -118,7 +124,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="room in rooms" :key="room.id" class="table-row">
+              <tr v-for="room in rooms" :key="room.id" class="table-row" :class="{ 'is-empty': isEmpty(room) }">
                 <td class="td-thumb">
                   <div class="row-thumb">
                     <img v-if="room.cover_image" :src="room.cover_image.url" :alt="room.name" class="row-thumb-img">
@@ -130,8 +136,13 @@
                   <span class="row-id">R{{ room.id }}</span>
                 </td>
                 <td class="muted-text">{{ room.description || '—' }}</td>
-                <td><span class="chip">{{ room.items_count || 0 }}</span></td>
-                <td><span class="chip">{{ room.boxes_count || 0 }}</span></td>
+                <template v-if="isEmpty(room)">
+                  <td colspan="2"><span class="chip chip--empty">leer</span></td>
+                </template>
+                <template v-else>
+                  <td><span class="chip">{{ room.items_count || 0 }}</span></td>
+                  <td><span class="chip">{{ room.boxes_count || 0 }}</span></td>
+                </template>
                 <td class="td-actions">
                   <div class="actions-wrap">
                     <router-link :to="`/rooms/${room.id}`" class="row-btn" title="Ansehen">
@@ -229,6 +240,10 @@ async function fetchRooms() {
   }
 }
 
+function isEmpty(room) {
+  return !room.items_count && !room.boxes_count
+}
+
 function confirmDelete(room) {
   deleteTarget.value = room
 }
@@ -292,6 +307,21 @@ async function deleteRoom() {
 .list-stats { display: flex; gap: 0.5rem; }
 .stat-chip { font-size: 0.75rem; padding: 0.2rem 0.6rem; background: #f3f4f6; color: #6b7280; border-radius: 99px; white-space: nowrap; }
 .list-actions { display: flex; gap: 0.25rem; }
+
+/* Empty state (0 Items, 0 Boxen) */
+.is-empty {
+  .list-thumb, .gallery-placeholder, .row-thumb {
+    background: transparent;
+    border: 1px dashed #d1d5db;
+  }
+  .thumb-id, .row-thumb-id, .gallery-placeholder svg {
+    color: var(--text-muted);
+  }
+}
+.stat-chip--empty, .chip--empty {
+  color: var(--text-muted);
+  font-style: italic;
+}
 
 /* Gallery */
 .gallery-view { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 1rem; }

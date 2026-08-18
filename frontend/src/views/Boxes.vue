@@ -58,7 +58,7 @@
 
       <!-- List View -->
       <div v-if="viewMode === 'list'" class="list-view">
-        <div v-for="box in boxes" :key="box.id" class="list-card" @click="$router.push(`/boxes/${box.id}`)" style="cursor:pointer">
+        <div v-for="box in boxes" :key="box.id" class="list-card" :class="{ 'is-empty': isEmpty(box) }" @click="$router.push(`/boxes/${box.id}`)" style="cursor:pointer">
           <div class="list-thumb">
             <img v-if="box.image_url" :src="box.image_url" :alt="box.name" class="thumb-img">
             <span v-else class="thumb-id">B{{ box.id }}</span>
@@ -70,7 +70,8 @@
           </div>
           <div class="list-footer" @click.stop>
             <div class="list-stats">
-              <span class="stat-chip">{{ box.items_count || 0 }} Items</span>
+              <span v-if="isEmpty(box)" class="stat-chip stat-chip--empty">leer</span>
+              <span v-else class="stat-chip">{{ box.items_count || 0 }} Items</span>
             </div>
             <div class="list-actions">
               <router-link :to="`/boxes/${box.id}`" class="row-btn" title="Ansehen">
@@ -97,7 +98,7 @@
 
       <!-- Gallery View -->
       <div v-else-if="viewMode === 'gallery'" class="gallery-view">
-        <router-link v-for="box in boxes" :key="box.id" :to="`/boxes/${box.id}`" class="gallery-card">
+        <router-link v-for="box in boxes" :key="box.id" :to="`/boxes/${box.id}`" class="gallery-card" :class="{ 'is-empty': isEmpty(box) }">
           <div class="gallery-img-wrap" :style="box.cover_image ? { background: colorMap[box.cover_image.url] || '#f3f4f6' } : {}">
             <img v-if="box.cover_image" :src="box.cover_image.url" :alt="box.name" class="gallery-img">
             <div v-else class="gallery-placeholder box-placeholder">
@@ -115,7 +116,7 @@
               </svg>
               {{ box.room ? box.room.name : 'Inbox' }}
             </div>
-            <div class="gallery-stats">{{ box.items_count || 0 }} Items</div>
+            <div class="gallery-stats">{{ isEmpty(box) ? 'leer' : `${box.items_count || 0} Items` }}</div>
           </div>
         </router-link>
       </div>
@@ -134,7 +135,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="box in boxes" :key="box.id" class="table-row">
+              <tr v-for="box in boxes" :key="box.id" class="table-row" :class="{ 'is-empty': isEmpty(box) }">
                 <td class="td-thumb">
                   <div class="row-thumb">
                     <img v-if="box.cover_image" :src="box.cover_image.url" :alt="box.name" class="row-thumb-img">
@@ -146,7 +147,7 @@
                   <span class="row-id">B{{ box.id }}</span>
                 </td>
                 <td class="muted-text">{{ box.room ? box.room.name : 'Inbox' }}</td>
-                <td><span class="chip">{{ box.items_count || 0 }}</span></td>
+                <td><span class="chip" :class="{ 'chip--empty': isEmpty(box) }">{{ isEmpty(box) ? 'leer' : (box.items_count || 0) }}</span></td>
                 <td class="td-actions">
                   <div class="actions-wrap">
                     <router-link :to="`/boxes/${box.id}`" class="row-btn" title="Ansehen">
@@ -247,6 +248,10 @@ async function fetchBoxes() {
   }
 }
 
+function isEmpty(box) {
+  return !box.items_count
+}
+
 function confirmDelete(box) {
   deleteTarget.value = box
 }
@@ -316,6 +321,21 @@ async function doDelete() {
 .list-stats { display: flex; gap: 0.5rem; }
 .stat-chip { font-size: 0.75rem; padding: 0.2rem 0.6rem; background: #f3f4f6; color: #6b7280; border-radius: 99px; }
 .list-actions { display: flex; gap: 0.25rem; }
+
+/* Empty state (0 Items) */
+.is-empty {
+  .list-thumb, .gallery-placeholder, .row-thumb {
+    background: transparent;
+    border: 1px dashed #d1d5db;
+  }
+  .thumb-id, .row-thumb-id, .gallery-placeholder svg {
+    color: var(--text-muted);
+  }
+}
+.stat-chip--empty, .chip--empty {
+  color: var(--text-muted);
+  font-style: italic;
+}
 
 @media (max-width: 640px) {
   .list-card {

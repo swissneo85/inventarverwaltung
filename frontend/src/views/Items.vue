@@ -13,6 +13,7 @@
     
     <!-- Filters -->
     <div class="filters-card card">
+      <!-- Zeile 1: Basis-Filter -->
       <div class="filters-row">
         <div class="search-field">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -26,8 +27,29 @@
             @input="handleSearch"
           />
         </div>
-        
-        <select v-model="filters.status" @change="fetchItems" class="filter-select">
+
+        <select v-model="roomId" @change="applyFilters" class="filter-select">
+          <option value="">Alle Räume</option>
+          <option v-for="room in rooms" :key="room.id" :value="room.id">
+            {{ room.name }}
+          </option>
+        </select>
+
+        <MultiSelectFilter
+          label="Kategorie"
+          :options="visibleCategories"
+          :model-value="categoryIds"
+          @update:model-value="onCategoryIdsChange"
+        />
+
+        <MultiSelectFilter
+          label="Besitzer"
+          :options="persons"
+          :model-value="ownerIds"
+          @update:model-value="onOwnerIdsChange"
+        />
+
+        <select v-model="statusFilter" @change="applyFilters" class="filter-select">
           <option value="aktiv">Nur aktiv</option>
           <option value="archiviert">Archiviert</option>
           <option value="alle">Alle</option>
@@ -37,44 +59,38 @@
           <option value="verloren">Verloren</option>
           <option value="defekt_entsorgt">Defekt / Entsorgt</option>
         </select>
-
-        <select v-model="filters.category_id" @change="fetchItems" class="filter-select">
-          <option value="">Alle Kategorien</option>
-          <option v-for="cat in visibleCategories" :key="cat.id" :value="cat.id">
-            {{ cat.name }}
-          </option>
-        </select>
-
-        <select v-model="filters.room_id" @change="fetchItems" class="filter-select">
-          <option value="">Alle Räume</option>
-          <option v-for="room in rooms" :key="room.id" :value="room.id">
-            {{ room.name }}
-          </option>
-        </select>
-        
-        <button @click="showFilters = !showFilters" class="btn-secondary">
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
-          </svg>
-          Filter
-        </button>
       </div>
-      
-      <div v-if="showFilters" class="filters-expanded">
-        <label class="filter-checkbox">
-          <input type="checkbox" v-model="filters.in_inbox" @change="fetchItems">
-          Nur Inbox
-        </label>
 
-        <label class="filter-checkbox">
-          <input type="checkbox" v-model="filters.warranty_expiring" @change="fetchItems">
-          Garantie läuft ab
-        </label>
+      <!-- Zeile 2: Quick-Filter-Chips -->
+      <div class="quick-filters-row">
+        <button
+          v-for="chip in quickChips"
+          :key="chip.key"
+          type="button"
+          class="quick-chip"
+          :class="{ active: quick[chip.key] }"
+          @click="toggleQuick(chip.key)"
+        >
+          {{ chip.label }} ({{ counts[chip.countKey] || 0 }})
+        </button>
 
-        <label class="filter-checkbox">
-          <input type="checkbox" v-model="filters.show_accessories" @change="fetchItems">
+        <label class="filter-checkbox accessories-checkbox">
+          <input type="checkbox" v-model="showAccessories" @change="applyFilters">
           Zubehör anzeigen
         </label>
+      </div>
+
+      <!-- Zeile 3: Aktive Filter -->
+      <div v-if="hasActiveFilters" class="active-filters-row">
+        <span v-for="pill in activePills" :key="pill.key" class="filter-pill">
+          {{ pill.label }}
+          <button type="button" class="filter-pill-remove" @click="pill.remove" aria-label="Filter entfernen">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </span>
+        <button type="button" class="btn-reset-all" @click="resetAll">Alle zurücksetzen</button>
       </div>
     </div>
     
@@ -269,6 +285,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from '@/services/api'
 import ItemCard from '@/components/ItemCard.vue'
+import MultiSelectFilter from '@/components/MultiSelectFilter.vue'
 import { debounce } from 'lodash'
 import { useAuthStore } from '@/stores/auth'
 import { extractImageColor } from '@/composables/useImageColor'
@@ -283,6 +300,7 @@ const canEdit = computed(() => authStore.isEditor)
 const items = ref([])
 const categories = ref([])
 const rooms = ref([])
+const persons = ref([])
 const colorMap = ref({})
 
 watch(items, (newItems) => {
@@ -300,18 +318,104 @@ const visibleCategories = computed(() => {
   return categories.value.filter(c => perms.includes(c.id))
 })
 const loading = ref(false)
-const showFilters = ref(false)
 const viewMode = ref(localStorage.getItem(STORAGE_KEY) || 'list')
 watch(viewMode, val => localStorage.setItem(STORAGE_KEY, val))
+
 const searchQuery = ref('')
-const filters = ref({
-  status: 'aktiv',
-  category_id: '',
-  room_id: '',
-  in_inbox: false,
+const roomId = ref('')
+const categoryIds = ref([])
+const ownerIds = ref([])
+const statusFilter = ref('aktiv')
+const showAccessories = ref(false)
+const quick = ref({
+  inbox: false,
+  no_category: false,
+  no_photo: false,
   warranty_expiring: false,
-  show_accessories: false,
 })
+
+const counts = ref({
+  inbox_count: 0,
+  no_category_count: 0,
+  no_photo_count: 0,
+  warranty_expiring_count: 0,
+})
+
+const quickChips = [
+  { key: 'inbox', label: 'Inbox', countKey: 'inbox_count' },
+  { key: 'no_category', label: 'Ohne Kategorie', countKey: 'no_category_count' },
+  { key: 'no_photo', label: 'Ohne Foto', countKey: 'no_photo_count' },
+  { key: 'warranty_expiring', label: 'Garantie läuft ab', countKey: 'warranty_expiring_count' },
+]
+
+const STATUS_LABELS = {
+  aktiv: 'Nur aktiv',
+  archiviert: 'Archiviert',
+  alle: 'Alle',
+  entsorgt: 'Entsorgt',
+  verkauft: 'Verkauft',
+  verschenkt: 'Verschenkt',
+  verloren: 'Verloren',
+  defekt_entsorgt: 'Defekt / Entsorgt',
+}
+
+function categoryName(id) {
+  return categories.value.find(c => c.id === id)?.name || `#${id}`
+}
+function ownerName(id) {
+  return persons.value.find(p => p.id === id)?.name || `#${id}`
+}
+function roomName(id) {
+  return rooms.value.find(r => r.id === id)?.name || `#${id}`
+}
+
+function removeRoom() { roomId.value = ''; applyFilters() }
+function removeCategory(id) { categoryIds.value = categoryIds.value.filter(v => v !== id); applyFilters() }
+function removeOwner(id) { ownerIds.value = ownerIds.value.filter(v => v !== id); applyFilters() }
+function removeQuick(key) { quick.value[key] = false; applyFilters() }
+function removeStatus() { statusFilter.value = 'aktiv'; applyFilters() }
+
+const activePills = computed(() => {
+  const pills = []
+  if (roomId.value) {
+    pills.push({ key: 'room', label: `Raum: ${roomName(Number(roomId.value))}`, remove: removeRoom })
+  }
+  for (const id of categoryIds.value) {
+    pills.push({ key: `cat-${id}`, label: `Kategorie: ${categoryName(id)}`, remove: () => removeCategory(id) })
+  }
+  for (const id of ownerIds.value) {
+    pills.push({ key: `owner-${id}`, label: `Besitzer: ${ownerName(id)}`, remove: () => removeOwner(id) })
+  }
+  for (const chip of quickChips) {
+    if (quick.value[chip.key]) {
+      pills.push({ key: `quick-${chip.key}`, label: chip.label, remove: () => removeQuick(chip.key) })
+    }
+  }
+  if (statusFilter.value !== 'aktiv') {
+    pills.push({ key: 'status', label: `Status: ${STATUS_LABELS[statusFilter.value] || statusFilter.value}`, remove: removeStatus })
+  }
+  return pills
+})
+
+const hasActiveFilters = computed(() => activePills.value.length > 0 || !!searchQuery.value)
+
+function onCategoryIdsChange(val) { categoryIds.value = val; applyFilters() }
+function onOwnerIdsChange(val) { ownerIds.value = val; applyFilters() }
+
+function toggleQuick(key) {
+  quick.value[key] = !quick.value[key]
+  applyFilters()
+}
+
+function resetAll() {
+  searchQuery.value = ''
+  roomId.value = ''
+  categoryIds.value = []
+  ownerIds.value = []
+  statusFilter.value = 'aktiv'
+  quick.value = { inbox: false, no_category: false, no_photo: false, warranty_expiring: false }
+  applyFilters()
+}
 
 const pagination = ref({
   current_page: 1,
@@ -320,19 +424,67 @@ const pagination = ref({
   per_page: 500,
 })
 
+function parseIdArray(value) {
+  if (!value) return []
+  const arr = Array.isArray(value) ? value : [value]
+  return arr.map(v => Number(v)).filter(v => !Number.isNaN(v))
+}
+
+function hydrateFromQuery() {
+  const q = route.query
+  searchQuery.value = typeof q.search === 'string' ? q.search : ''
+  roomId.value = q.room || ''
+  categoryIds.value = parseIdArray(q.categories)
+  ownerIds.value = parseIdArray(q.owners)
+  statusFilter.value = typeof q.status === 'string' ? q.status : 'aktiv'
+  const quickList = q.quick ? String(q.quick).split(',').filter(Boolean) : []
+  quick.value = {
+    inbox: quickList.includes('inbox'),
+    no_category: quickList.includes('no_category'),
+    no_photo: quickList.includes('no_photo'),
+    warranty_expiring: quickList.includes('warranty_expiring'),
+  }
+}
+
+function buildQueryParams() {
+  const q = {}
+  if (searchQuery.value) q.search = searchQuery.value
+  if (roomId.value) q.room = String(roomId.value)
+  if (categoryIds.value.length) q.categories = categoryIds.value.map(String)
+  if (ownerIds.value.length) q.owners = ownerIds.value.map(String)
+  if (statusFilter.value !== 'aktiv') q.status = statusFilter.value
+  const activeQuick = quickChips.filter(chip => quick.value[chip.key]).map(chip => chip.key)
+  if (activeQuick.length) q.quick = activeQuick.join(',')
+  return q
+}
+
+function syncUrl() {
+  router.replace({ query: buildQueryParams() })
+}
+
+async function applyFilters() {
+  syncUrl()
+  pagination.value.current_page = 1
+  await Promise.all([fetchItems(), fetchCounts()])
+}
+
 onMounted(async () => {
+  hydrateFromQuery()
+
   try {
-    const [catRes, roomRes] = await Promise.all([
+    const [catRes, roomRes, personRes] = await Promise.all([
       api.get('/categories'),
       api.get('/rooms'),
+      api.get('/persons/all'),
     ])
     categories.value = catRes.data.data
     rooms.value = roomRes.data.data
+    persons.value = personRes.data.data
   } catch (error) {
     console.error('Fehler beim Laden:', error)
   }
 
-  await fetchItems()
+  await Promise.all([fetchItems(), fetchCounts()])
 
   if (route.query.new) {
     router.replace({ name: 'ItemCreate' })
@@ -340,31 +492,44 @@ onMounted(async () => {
 })
 
 const handleSearch = debounce(() => {
-  fetchItems()
+  applyFilters()
 }, 300)
+
+function buildFilterParams() {
+  const params = {
+    status: statusFilter.value,
+    search: searchQuery.value || undefined,
+    room_id: roomId.value || undefined,
+    category_ids: categoryIds.value.length ? categoryIds.value : undefined,
+    person_ids: ownerIds.value.length ? ownerIds.value : undefined,
+    show_accessories: showAccessories.value || undefined,
+  }
+  Object.keys(params).forEach(key => {
+    if (params[key] === undefined) delete params[key]
+  })
+  return params
+}
 
 async function fetchItems() {
   loading.value = true
-  
+
   try {
     const params = {
-      ...filters.value,
-      search: searchQuery.value || undefined,
+      ...buildFilterParams(),
+      in_inbox: quick.value.inbox || undefined,
+      no_category: quick.value.no_category || undefined,
+      no_photo: quick.value.no_photo || undefined,
+      warranty_expiring: quick.value.warranty_expiring || undefined,
       page: pagination.value.current_page,
       per_page: pagination.value.per_page,
     }
-
-    // Remove empty filters (but keep status – always send it explicitly)
     Object.keys(params).forEach(key => {
-      if (key === 'status') return
-      if (params[key] === '' || params[key] === false || params[key] === undefined) {
-        delete params[key]
-      }
+      if (params[key] === undefined) delete params[key]
     })
-    
+
     const response = await api.get('/items', { params })
     items.value = response.data.data.data || response.data.data
-    
+
     if (response.data.data.meta) {
       pagination.value = {
         current_page: response.data.data.meta.current_page,
@@ -377,6 +542,15 @@ async function fetchItems() {
     console.error('Fehler beim Laden:', error)
   } finally {
     loading.value = false
+  }
+}
+
+async function fetchCounts() {
+  try {
+    const response = await api.get('/items/filter-counts', { params: buildFilterParams() })
+    counts.value = response.data.data
+  } catch (error) {
+    console.error('Fehler beim Laden der Filter-Counts:', error)
   }
 }
 
@@ -467,12 +641,37 @@ function conditionClass(condition) {
   }
 }
 
-.filters-expanded {
+.quick-filters-row {
   display: flex;
-  gap: 1.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.6rem;
   margin-top: 1rem;
   padding-top: 1rem;
   border-top: 1px solid #e5e7eb;
+}
+
+.quick-chip {
+  padding: 0.4rem 0.85rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 99px;
+  background: white;
+  color: #374151;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+
+  &:hover {
+    background: #f3f4f6;
+  }
+
+  &.active {
+    background: var(--bg-accent);
+    color: var(--text-accent);
+    border: 1px solid var(--border-accent);
+  }
 }
 
 .filter-checkbox {
@@ -481,6 +680,69 @@ function conditionClass(condition) {
   gap: 0.5rem;
   font-size: 0.875rem;
   cursor: pointer;
+}
+
+.accessories-checkbox {
+  margin-left: auto;
+  color: #6b7280;
+}
+
+.active-filters-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.85rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.filter-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.4rem 0.3rem 0.75rem;
+  background: var(--bg-accent);
+  color: var(--text-accent);
+  border: 1px solid var(--border-accent);
+  border-radius: 99px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.filter-pill-remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.08);
+  }
+}
+
+.btn-reset-all {
+  padding: 0.35rem 0.85rem;
+  border: none;
+  background: none;
+  color: #6b7280;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: underline;
+
+  &:hover {
+    color: #374151;
+  }
 }
 
 .view-toggle {
@@ -827,6 +1089,23 @@ function conditionClass(condition) {
   .search-field input {
     font-size: 16px;
     min-height: 36px;
+  }
+
+  .quick-filters-row {
+    gap: 0.5rem;
+  }
+
+  .quick-chip {
+    min-height: 36px;
+  }
+
+  .accessories-checkbox {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .active-filters-row {
+    gap: 0.4rem;
   }
 
   .toggle-btn {

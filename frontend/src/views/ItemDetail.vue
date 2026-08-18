@@ -35,23 +35,37 @@
 
       <div class="card detail-card">
         <h2>Allgemein</h2>
-        <div class="detail-row"><span>Kategorie</span><span>{{ item.category?.name || '–' }}</span></div>
-        <div class="detail-row"><span>Besitzer</span><span>{{ item.person?.name || '–' }}</span></div>
-        <div v-if="item.loaned_to_person" class="detail-row">
-          <span>Ausgeliehen an</span>
-          <span>{{ item.loaned_to_person.name }}</span>
-        </div>
-        <div class="detail-row"><span>Zustand</span>
-          <span v-if="item.condition" :class="['condition-badge', conditionClass(item.condition)]">{{ item.condition }}</span>
-          <span v-else>–</span>
+        <div v-if="item.category" class="detail-row"><span>Kategorie</span><span>{{ item.category.name }}</span></div>
+        <div v-if="item.person" class="detail-row"><span>Besitzer</span><span>{{ item.person.name }}</span></div>
+        <div v-if="item.condition" class="detail-row">
+          <span>Zustand</span>
+          <span :class="['condition-badge', conditionClass(item.condition)]">{{ item.condition }}</span>
         </div>
         <div class="detail-row"><span>Status</span>
           <span :class="['status-badge', statusBannerClass(item.status)]">{{ statusLabel(item.status) }}</span>
         </div>
-        <div class="detail-row"><span>Marke</span><span>{{ item.brand || '–' }}</span></div>
-        <div class="detail-row"><span>Modell</span><span>{{ item.model || '–' }}</span></div>
-        <div class="detail-row"><span>Seriennummer</span><span>{{ item.serial_number || '–' }}</span></div>
+        <div v-if="item.brand" class="detail-row"><span>Marke</span><span>{{ item.brand }}</span></div>
+        <div v-if="item.model" class="detail-row"><span>Modell</span><span>{{ item.model }}</span></div>
+        <div v-if="item.serial_number" class="detail-row"><span>Seriennummer</span><span>{{ item.serial_number }}</span></div>
         <div class="detail-row"><span>Menge</span><span>{{ item.quantity }} {{ item.unit || '' }}</span></div>
+        <button v-if="canEdit && allgemeinMissingLabel" type="button" class="add-field-link" @click="goToEdit">{{ allgemeinMissingLabel }}</button>
+      </div>
+
+      <div class="card detail-card">
+        <h2>Kauf &amp; Garantie</h2>
+        <div v-if="canSeePrice && item.purchase_price" class="detail-row">
+          <span>Kaufpreis</span><span>CHF {{ Number(item.purchase_price).toFixed(2) }}</span>
+        </div>
+        <div v-if="item.purchased_at" class="detail-row">
+          <span>Kaufdatum</span><span>{{ formatDate(item.purchased_at) }}</span>
+        </div>
+        <div v-if="item.purchase_location" class="detail-row">
+          <span>Kaufort</span><span>{{ item.purchase_location }}</span>
+        </div>
+        <div v-if="item.warranty_until" class="detail-row">
+          <span>Garantie bis</span><span>{{ formatDate(item.warranty_until) }}</span>
+        </div>
+        <button v-if="canEdit && kaufMissingLabel" type="button" class="add-field-link" @click="goToEdit">{{ kaufMissingLabel }}</button>
       </div>
 
       <div class="card detail-card">
@@ -60,6 +74,15 @@
           <span>Ort</span>
           <span class="location-path">{{ locationText }}</span>
         </div>
+      </div>
+
+      <div class="card detail-card">
+        <h2>Ausleihe</h2>
+        <div v-if="item.loaned_to_person" class="detail-row">
+          <span>Ausgeliehen an</span>
+          <span>{{ item.loaned_to_person.name }}</span>
+        </div>
+        <button v-else-if="canEdit" type="button" class="add-field-link" @click="goToEdit">+ Ausgeliehen an ergänzen</button>
       </div>
 
       <!-- Enthaltene Items (Zubehör) -->
@@ -84,30 +107,15 @@
         </router-link>
       </div>
 
-      <div class="card detail-card" v-if="item.purchase_price || item.purchased_at || item.warranty_until || item.purchase_location">
-        <h2>Kauf &amp; Garantie</h2>
-        <div v-if="item.purchase_price" class="detail-row">
-          <span>Kaufpreis</span><span>CHF {{ Number(item.purchase_price).toFixed(2) }}</span>
-        </div>
-        <div v-if="item.purchased_at" class="detail-row">
-          <span>Kaufdatum</span><span>{{ formatDate(item.purchased_at) }}</span>
-        </div>
-        <div v-if="item.purchase_location" class="detail-row">
-          <span>Kaufort</span><span>{{ item.purchase_location }}</span>
-        </div>
-        <div v-if="item.warranty_until" class="detail-row">
-          <span>Garantie bis</span><span>{{ formatDate(item.warranty_until) }}</span>
-        </div>
-      </div>
-
-      <div class="card detail-card" v-if="item.description || item.notes">
-        <h2>Beschreibung &amp; Notizen</h2>
+      <div class="card detail-card">
+        <h2>Zusätzliche Informationen</h2>
         <div v-if="item.description" class="detail-row detail-row--block">
           <span>Beschreibung</span><p>{{ item.description }}</p>
         </div>
         <div v-if="item.notes" class="detail-row detail-row--block">
           <span>Notizen</span><p>{{ item.notes }}</p>
         </div>
+        <button v-if="canEdit && zusatzMissingLabel" type="button" class="add-field-link" @click="goToEdit">{{ zusatzMissingLabel }}</button>
       </div>
 
     </div>
@@ -134,6 +142,48 @@ const id = computed(() => route.params.id)
 const item = ref(null)
 const loading = ref(true)
 const imageCount = ref(null)
+
+const canSeePrice = computed(() => !!item.value && Object.prototype.hasOwnProperty.call(item.value, 'purchase_price'))
+
+function missingFieldLabel(missing) {
+  if (missing.length === 0) return null
+  if (missing.length === 1) return `+ ${missing[0]} ergänzen`
+  return '+ Angaben ergänzen'
+}
+
+const allgemeinMissingLabel = computed(() => {
+  if (!item.value) return null
+  const missing = []
+  if (!item.value.category) missing.push('Kategorie')
+  if (!item.value.person) missing.push('Besitzer')
+  if (!item.value.condition) missing.push('Zustand')
+  if (!item.value.brand) missing.push('Marke')
+  if (!item.value.model) missing.push('Modell')
+  if (!item.value.serial_number) missing.push('Seriennummer')
+  return missingFieldLabel(missing)
+})
+
+const kaufMissingLabel = computed(() => {
+  if (!item.value) return null
+  const missing = []
+  if (canSeePrice.value && !item.value.purchase_price) missing.push('Kaufpreis')
+  if (!item.value.purchased_at) missing.push('Kaufdatum')
+  if (!item.value.purchase_location) missing.push('Kaufort')
+  if (!item.value.warranty_until) missing.push('Garantie bis')
+  return missingFieldLabel(missing)
+})
+
+const zusatzMissingLabel = computed(() => {
+  if (!item.value) return null
+  const missing = []
+  if (!item.value.description) missing.push('Beschreibung')
+  if (!item.value.notes) missing.push('Notizen')
+  return missingFieldLabel(missing)
+})
+
+function goToEdit() {
+  router.push({ name: 'ItemEdit', params: { id: item.value.id } })
+}
 
 const locationText = computed(() => {
   if (!item.value) return '–'
@@ -238,6 +288,20 @@ onMounted(loadItem)
 .detail-row--block { flex-direction: column; gap: 0.25rem; }
 .detail-row--block > span:first-child { font-size: 0.8rem; }
 .detail-row--block p { margin: 0; font-size: 0.875rem; color: #374151; white-space: pre-wrap; }
+
+.add-field-link {
+  display: block;
+  margin-top: 0.5rem;
+  padding: 0;
+  border: none;
+  background: none;
+  color: #3b82f6;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+}
+.add-field-link:hover { text-decoration: underline; }
 
 .condition-badge {
   display: inline-block;

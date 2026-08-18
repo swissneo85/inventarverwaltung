@@ -15,12 +15,83 @@ class ItemController extends BaseApiController
      */
     public function index(Request $request)
     {
-        $user = auth()->user();
-        $query = Item::with([
+        $query = $this->buildBaseQuery($request, $isDisplayIdSearch);
+        if ($query === null) {
+            return $this->error('Ungültiger Status-Filter. Erlaubt: ' . implode(', ', array_merge(['alle', 'archiviert'], Item::STATUS_VALUES)), 422);
+        }
+
+        $query->with([
             'category', 'room', 'box.room', 'coverImage',
             'parentItem.room', 'parentItem.box.room',
             'parentItem.parentItem.room', 'parentItem.parentItem.box.room',
         ]);
+
+        // Nach parent_item_id filtern
+        if ($request->has('parent_item_id')) {
+            $query->where('parent_item_id', $request->parent_item_id);
+        }
+
+        // Quick-Filter-Chips
+        if ($request->has('in_inbox')) {
+            $query->where('is_in_inbox', $request->boolean('in_inbox'));
+        }
+        if ($request->boolean('no_category')) {
+            $query->whereNull('category_id');
+        }
+        if ($request->boolean('no_photo')) {
+            $query->whereDoesntHave('coverImage');
+        }
+        if ($request->boolean('warranty_expiring')) {
+            $query->warrantyExpiring(30);
+        }
+
+        // Zubehör-Items standardmässig ausblenden (bei Display-ID-Suche nicht nötig)
+        if (!$isDisplayIdSearch && !$request->boolean('show_accessories', false)) {
+            $query->topLevel();
+        }
+
+        $items = $query->orderBy('name')->paginate($request->get('per_page', 50));
+        $this->hidePriceIfNeeded($items);
+
+        return $this->success($items);
+    }
+
+    /**
+     * Live-Counts für die Quick-Filter-Chips, basierend auf den aktuell
+     * angewendeten Basis-Filtern (Raum/Kategorie/Besitzer/Suche/Status).
+     * Die Quick-Filter selbst fliessen bewusst NICHT in die Basis-Query ein,
+     * damit jeder Chip unabhängig zeigt, wie viele Treffer er hätte.
+     */
+    public function filterCounts(Request $request)
+    {
+        $query = $this->buildBaseQuery($request, $isDisplayIdSearch);
+        if ($query === null) {
+            return $this->error('Ungültiger Status-Filter. Erlaubt: ' . implode(', ', array_merge(['alle', 'archiviert'], Item::STATUS_VALUES)), 422);
+        }
+
+        if (!$isDisplayIdSearch && !$request->boolean('show_accessories', false)) {
+            $query->topLevel();
+        }
+
+        return $this->success([
+            'inbox_count' => (clone $query)->where('is_in_inbox', true)->count(),
+            'no_category_count' => (clone $query)->whereNull('category_id')->count(),
+            'no_photo_count' => (clone $query)->whereDoesntHave('coverImage')->count(),
+            'warranty_expiring_count' => (clone $query)->warrantyExpiring(30)->count(),
+        ]);
+    }
+
+    /**
+     * Baut die Basis-Query für Item-Listing/Counts anhand der Basis-Filter
+     * (Kategorie-Berechtigung, Status, Raum, Kategorie(n), Besitzer, Suche).
+     * $isDisplayIdSearch wird per Referenz zurückgegeben.
+     * Gibt null zurück, wenn der Status-Filter ungültig ist.
+     */
+    private function buildBaseQuery(Request $request, ?bool &$isDisplayIdSearch)
+    {
+        $isDisplayIdSearch = false;
+        $user = auth()->user();
+        $query = Item::query();
 
         // Kategorie-Filter für Viewer mit konfigurierten Berechtigungen
         if ($user->role === 'viewer') {
@@ -37,7 +108,7 @@ class ItemController extends BaseApiController
         $allowedStatusFilters = array_merge(['alle', 'archiviert'], Item::STATUS_VALUES);
         $statusFilter = $request->get('status', 'aktiv');
         if (!in_array($statusFilter, $allowedStatusFilters)) {
-            return $this->error('Ungültiger Status-Filter. Erlaubt: ' . implode(', ', $allowedStatusFilters), 422);
+            return null;
         }
         if ($statusFilter === 'archiviert') {
             $query->archiviert();
@@ -45,7 +116,7 @@ class ItemController extends BaseApiController
             $query->where('status', $statusFilter);
         }
 
-        // Filter
+        // Raum-Filter (single-select)
         if ($request->has('room_id')) {
             $query->where('room_id', $request->room_id);
         }
@@ -54,26 +125,19 @@ class ItemController extends BaseApiController
             $query->where('box_id', $request->box_id);
         }
 
-        if ($request->has('category_id')) {
+        // Kategorie-Filter (Mehrfachauswahl) – category_ids[] hat Vorrang vor dem alten category_id
+        if ($request->has('category_ids')) {
+            $query->whereIn('category_id', (array) $request->input('category_ids'));
+        } elseif ($request->has('category_id')) {
             $query->where('category_id', $request->category_id);
         }
 
-        if ($request->has('in_inbox')) {
-            $query->where('is_in_inbox', $request->boolean('in_inbox'));
-        }
-
-        // Nach parent_item_id filtern
-        if ($request->has('parent_item_id')) {
-            $query->where('parent_item_id', $request->parent_item_id);
-        }
-
-        if ($request->has('warranty_expiring')) {
-            $days = (int) $request->get('warranty_expiring', 30);
-            $query->warrantyExpiring($days);
+        // Besitzer-Filter (Mehrfachauswahl)
+        if ($request->has('person_ids')) {
+            $query->whereIn('person_id', (array) $request->input('person_ids'));
         }
 
         // Suche – Display-ID wird als Query-Filter behandelt (kein Frühausstieg)
-        $isDisplayIdSearch = false;
         if ($request->has('search')) {
             $term = $request->search;
 
@@ -98,15 +162,7 @@ class ItemController extends BaseApiController
             }
         }
 
-        // Zubehör-Items standardmässig ausblenden (bei Display-ID-Suche nicht nötig)
-        if (!$isDisplayIdSearch && !$request->boolean('show_accessories', false)) {
-            $query->topLevel();
-        }
-
-        $items = $query->orderBy('name')->paginate($request->get('per_page', 50));
-        $this->hidePriceIfNeeded($items);
-
-        return $this->success($items);
+        return $query;
     }
 
     /**
