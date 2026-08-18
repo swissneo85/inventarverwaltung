@@ -9,8 +9,8 @@
     <span class="item-id">{{ item.display_id || 'I' + item.id }}</span>
     <span class="item-name">{{ item.name }}</span>
     <div class="item-footer" @click.stop>
-      <span v-if="item.category" class="item-cat">{{ item.category.name }}</span>
-      <span v-if="locationText" class="item-loc">{{ locationText }}</span>
+      <span class="item-cat">{{ item.category?.name || '' }}</span>
+      <span class="item-loc">{{ locationText || '' }}</span>
       <div class="item-actions">
         <router-link :to="`/items/${item.id}`" class="row-btn" title="Details">
           <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -53,7 +53,8 @@ const locationText = computed(() => {
 
 <style lang="scss" scoped>
 .item-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: 48px 40px minmax(0, 1fr) 110px 1fr auto;
   align-items: center;
   gap: 0.75rem;
   padding: 0.5rem 1rem;
@@ -93,46 +94,41 @@ const locationText = computed(() => {
   font-size: 0.75rem;
   font-weight: 600;
   color: #3b82f6;
-  flex-shrink: 0;
-  min-width: 36px;
 }
 
 .item-name {
-  flex: 1;
   font-size: 0.875rem;
   font-weight: 600;
   color: #111827;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  min-width: 0;
 }
 
 .item-footer {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex-shrink: 0;
+  display: contents;
 }
 
 .item-cat {
   font-size: 0.75rem;
   color: #9ca3af;
-  flex-shrink: 0;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .item-loc {
   font-size: 0.75rem;
   color: #9ca3af;
-  flex-shrink: 0;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .item-actions {
   display: flex;
   gap: 0.25rem;
-  flex-shrink: 0;
+  justify-self: end;
 }
 
 .row-btn {
@@ -141,6 +137,8 @@ const locationText = computed(() => {
   justify-content: center;
   width: 30px;
   height: 30px;
+  border: none;
+  background: none;
   border-radius: 6px;
   color: #9ca3af;
   text-decoration: none;
@@ -168,11 +166,19 @@ const locationText = computed(() => {
     align-self: center;
   }
   .item-footer {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
     grid-column: 2;
     grid-row: 2;
     justify-content: space-between;
-    .item-cat, .item-loc { white-space: normal; }
-    .item-actions { margin-left: auto; }
   }
+  .item-cat, .item-loc {
+    flex-shrink: 0;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: unset;
+  }
+  .item-actions { margin-left: auto; justify-self: auto; }
 }
 </style>

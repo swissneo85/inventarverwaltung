@@ -1,7 +1,7 @@
 <template>
   <div class="multi-select" ref="rootEl">
-    <button type="button" class="multi-select-trigger" :class="{ active: modelValue.length > 0 }" @click="open = !open">
-      {{ modelValue.length > 0 ? `${label} (${modelValue.length})` : label }}
+    <button type="button" class="multi-select-trigger" :class="{ active: isActive }" @click="open = !open">
+      {{ triggerText }}
       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <polyline points="6 9 12 15 18 9"></polyline>
       </svg>
@@ -22,18 +22,29 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 
 const props = defineProps({
   label: { type: String, required: true },
   options: { type: Array, default: () => [] },
   modelValue: { type: Array, default: () => [] },
+  // Überschreibt den Trigger-Text (z. B. für ein "nur ein Wert ausgewählt" Sonderformat)
+  triggerLabel: { type: String, default: null },
+  // Überschreibt, ob der Trigger als "aktiv" (Akzentfarbe) dargestellt wird
+  active: { type: Boolean, default: null },
 })
 
 const emit = defineEmits(['update:modelValue'])
 
 const open = ref(false)
 const rootEl = ref(null)
+
+const triggerText = computed(() => {
+  if (props.triggerLabel !== null) return props.triggerLabel
+  return props.modelValue.length > 0 ? `${props.label} (${props.modelValue.length})` : props.label
+})
+
+const isActive = computed(() => props.active !== null ? props.active : props.modelValue.length > 0)
 
 function toggle(id) {
   const next = props.modelValue.includes(id)

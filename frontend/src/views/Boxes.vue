@@ -85,7 +85,7 @@
                   <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                 </svg>
               </router-link>
-              <button v-if="canDelete" class="row-btn row-btn-danger" title="Löschen" @click="confirmDelete(box)">
+              <button v-if="canDelete" class="row-btn row-btn--danger" title="Löschen" @click="confirmDelete(box)">
                 <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
                   <path d="M10 11v6"></path><path d="M14 11v6"></path>
@@ -161,7 +161,7 @@
                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                       </svg>
                     </router-link>
-                    <button v-if="canDelete" class="row-btn row-btn-danger" title="Löschen" @click="confirmDelete(box)">
+                    <button v-if="canDelete" class="row-btn row-btn--danger" title="Löschen" @click="confirmDelete(box)">
                       <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
                         <path d="M10 11v6"></path><path d="M14 11v6"></path>
@@ -397,12 +397,10 @@ async function doDelete() {
 .actions-wrap { display: flex; gap: 0.25rem; align-items: center; }
 .row-btn {
   display: flex; align-items: center; justify-content: center; width: 30px; height: 30px;
-  border-radius: 6px; color: #9ca3af; text-decoration: none; transition: all 0.15s;
+  border-radius: 6px; color: #9ca3af; text-decoration: none; background: none; border: none;
+  cursor: pointer; transition: all 0.15s;
   &:hover { background: #eff6ff; color: #3b82f6; }
-}
-
-.row-btn-danger {
-  &:hover { background: #fee2e2 !important; color: #dc2626 !important; }
+  &.row-btn--danger:hover { background: var(--bg-danger); color: var(--text-danger); }
 }
 
 .btn-danger {

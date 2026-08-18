@@ -17,7 +17,7 @@ class ItemController extends BaseApiController
     {
         $query = $this->buildBaseQuery($request, $isDisplayIdSearch);
         if ($query === null) {
-            return $this->error('Ungültiger Status-Filter. Erlaubt: ' . implode(', ', array_merge(['alle', 'archiviert'], Item::STATUS_VALUES)), 422);
+            return $this->error('Ungültiger Status-Filter. Erlaubt: ' . implode(', ', Item::STATUS_VALUES), 422);
         }
 
         $query->with([
@@ -66,7 +66,7 @@ class ItemController extends BaseApiController
     {
         $query = $this->buildBaseQuery($request, $isDisplayIdSearch);
         if ($query === null) {
-            return $this->error('Ungültiger Status-Filter. Erlaubt: ' . implode(', ', array_merge(['alle', 'archiviert'], Item::STATUS_VALUES)), 422);
+            return $this->error('Ungültiger Status-Filter. Erlaubt: ' . implode(', ', Item::STATUS_VALUES), 422);
         }
 
         if (!$isDisplayIdSearch && !$request->boolean('show_accessories', false)) {
@@ -104,16 +104,21 @@ class ItemController extends BaseApiController
             }
         }
 
-        // Status-Filter (Default: nur aktive Items)
-        $allowedStatusFilters = array_merge(['alle', 'archiviert'], Item::STATUS_VALUES);
-        $statusFilter = $request->get('status', 'aktiv');
-        if (!in_array($statusFilter, $allowedStatusFilters)) {
-            return null;
-        }
-        if ($statusFilter === 'archiviert') {
-            $query->archiviert();
-        } elseif ($statusFilter !== 'alle') {
-            $query->where('status', $statusFilter);
+        // Status-Filter (Mehrfachauswahl, Default: nur aktive Items)
+        // "alle" ist ein Sentinel-Wert für "kein Status-Filter" (z. B. wenn im Frontend
+        // alle Checkboxen abgewählt wurden) und wird nicht gegen STATUS_VALUES geprüft.
+        if ($request->has('status')) {
+            $requestedStatus = array_values(array_unique((array) $request->input('status')));
+            if (!in_array('alle', $requestedStatus, true)) {
+                if (array_diff($requestedStatus, Item::STATUS_VALUES)) {
+                    return null;
+                }
+                if (!empty($requestedStatus)) {
+                    $query->whereIn('status', $requestedStatus);
+                }
+            }
+        } else {
+            $query->where('status', 'aktiv');
         }
 
         // Raum-Filter (single-select)

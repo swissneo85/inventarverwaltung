@@ -372,11 +372,6 @@ class Item extends Model
         return $query->where('status', 'aktiv');
     }
 
-    public function scopeArchiviert($query)
-    {
-        return $query->where('status', '!=', 'aktiv');
-    }
-
     public function scopeInInbox($query)
     {
         return $query->where('is_in_inbox', true);

@@ -369,7 +369,7 @@ async function deleteRoom() {
   border-radius: 6px; color: #9ca3af; text-decoration: none; background: none; border: none;
   cursor: pointer; transition: all 0.15s;
   &:hover { background: #eff6ff; color: #3b82f6; }
-  &.row-btn--danger:hover { background: #fee2e2; color: #dc2626; }
+  &.row-btn--danger:hover { background: var(--bg-danger); color: var(--text-danger); }
 }
 
 /* States */

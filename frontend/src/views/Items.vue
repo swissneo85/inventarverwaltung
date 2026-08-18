@@ -49,16 +49,14 @@
           @update:model-value="onOwnerIdsChange"
         />
 
-        <select v-model="statusFilter" @change="applyFilters" class="filter-select">
-          <option value="aktiv">Nur aktiv</option>
-          <option value="archiviert">Archiviert</option>
-          <option value="alle">Alle</option>
-          <option value="entsorgt">Entsorgt</option>
-          <option value="verkauft">Verkauft</option>
-          <option value="verschenkt">Verschenkt</option>
-          <option value="verloren">Verloren</option>
-          <option value="defekt_entsorgt">Defekt / Entsorgt</option>
-        </select>
+        <MultiSelectFilter
+          label="Status"
+          :options="STATUS_OPTIONS"
+          :model-value="statusIds"
+          :trigger-label="statusTriggerLabel"
+          :active="statusIsActive"
+          @update:model-value="onStatusIdsChange"
+        />
       </div>
 
       <!-- Zeile 2: Quick-Filter-Chips -->
@@ -325,7 +323,7 @@ const searchQuery = ref('')
 const roomId = ref('')
 const categoryIds = ref([])
 const ownerIds = ref([])
-const statusFilter = ref('aktiv')
+const statusIds = ref(['aktiv'])
 const showAccessories = ref(false)
 const quick = ref({
   inbox: false,
@@ -350,14 +348,22 @@ const quickChips = [
 
 const STATUS_LABELS = {
   aktiv: 'Nur aktiv',
-  archiviert: 'Archiviert',
-  alle: 'Alle',
   entsorgt: 'Entsorgt',
   verkauft: 'Verkauft',
   verschenkt: 'Verschenkt',
   verloren: 'Verloren',
   defekt_entsorgt: 'Defekt / Entsorgt',
 }
+
+const STATUS_VALUES = Object.keys(STATUS_LABELS)
+const STATUS_OPTIONS = STATUS_VALUES.map(id => ({ id, name: STATUS_LABELS[id] }))
+
+const statusTriggerLabel = computed(() => {
+  if (statusIds.value.length === 0) return 'Status'
+  if (statusIds.value.length === 1) return STATUS_LABELS[statusIds.value[0]] || statusIds.value[0]
+  return `Status (${statusIds.value.length})`
+})
+const statusIsActive = computed(() => !(statusIds.value.length === 1 && statusIds.value[0] === 'aktiv'))
 
 function categoryName(id) {
   return categories.value.find(c => c.id === id)?.name || `#${id}`
@@ -373,7 +379,8 @@ function removeRoom() { roomId.value = ''; applyFilters() }
 function removeCategory(id) { categoryIds.value = categoryIds.value.filter(v => v !== id); applyFilters() }
 function removeOwner(id) { ownerIds.value = ownerIds.value.filter(v => v !== id); applyFilters() }
 function removeQuick(key) { quick.value[key] = false; applyFilters() }
-function removeStatus() { statusFilter.value = 'aktiv'; applyFilters() }
+function removeStatusValue(id) { statusIds.value = statusIds.value.filter(v => v !== id); applyFilters() }
+function resetStatus() { statusIds.value = ['aktiv']; applyFilters() }
 
 const activePills = computed(() => {
   const pills = []
@@ -391,8 +398,12 @@ const activePills = computed(() => {
       pills.push({ key: `quick-${chip.key}`, label: chip.label, remove: () => removeQuick(chip.key) })
     }
   }
-  if (statusFilter.value !== 'aktiv') {
-    pills.push({ key: 'status', label: `Status: ${STATUS_LABELS[statusFilter.value] || statusFilter.value}`, remove: removeStatus })
+  if (statusIds.value.length === 0) {
+    pills.push({ key: 'status-all', label: 'Status: Alle', remove: resetStatus })
+  } else if (!(statusIds.value.length === 1 && statusIds.value[0] === 'aktiv')) {
+    for (const id of statusIds.value) {
+      pills.push({ key: `status-${id}`, label: `Status: ${STATUS_LABELS[id] || id}`, remove: () => removeStatusValue(id) })
+    }
   }
   return pills
 })
@@ -401,6 +412,7 @@ const hasActiveFilters = computed(() => activePills.value.length > 0 || !!search
 
 function onCategoryIdsChange(val) { categoryIds.value = val; applyFilters() }
 function onOwnerIdsChange(val) { ownerIds.value = val; applyFilters() }
+function onStatusIdsChange(val) { statusIds.value = val; applyFilters() }
 
 function toggleQuick(key) {
   quick.value[key] = !quick.value[key]
@@ -412,7 +424,7 @@ function resetAll() {
   roomId.value = ''
   categoryIds.value = []
   ownerIds.value = []
-  statusFilter.value = 'aktiv'
+  statusIds.value = ['aktiv']
   quick.value = { inbox: false, no_category: false, no_photo: false, warranty_expiring: false }
   applyFilters()
 }
@@ -430,13 +442,20 @@ function parseIdArray(value) {
   return arr.map(v => Number(v)).filter(v => !Number.isNaN(v))
 }
 
+function hydrateStatusIds(value) {
+  if (value === undefined) return ['aktiv']
+  if (value === 'alle') return []
+  const arr = Array.isArray(value) ? value : [value]
+  return arr.filter(v => STATUS_VALUES.includes(v))
+}
+
 function hydrateFromQuery() {
   const q = route.query
   searchQuery.value = typeof q.search === 'string' ? q.search : ''
   roomId.value = q.room || ''
   categoryIds.value = parseIdArray(q.categories)
   ownerIds.value = parseIdArray(q.owners)
-  statusFilter.value = typeof q.status === 'string' ? q.status : 'aktiv'
+  statusIds.value = hydrateStatusIds(q.status)
   const quickList = q.quick ? String(q.quick).split(',').filter(Boolean) : []
   quick.value = {
     inbox: quickList.includes('inbox'),
@@ -452,7 +471,11 @@ function buildQueryParams() {
   if (roomId.value) q.room = String(roomId.value)
   if (categoryIds.value.length) q.categories = categoryIds.value.map(String)
   if (ownerIds.value.length) q.owners = ownerIds.value.map(String)
-  if (statusFilter.value !== 'aktiv') q.status = statusFilter.value
+  if (statusIds.value.length === 0) {
+    q.status = 'alle'
+  } else if (!(statusIds.value.length === 1 && statusIds.value[0] === 'aktiv')) {
+    q.status = statusIds.value.slice()
+  }
   const activeQuick = quickChips.filter(chip => quick.value[chip.key]).map(chip => chip.key)
   if (activeQuick.length) q.quick = activeQuick.join(',')
   return q
@@ -497,7 +520,7 @@ const handleSearch = debounce(() => {
 
 function buildFilterParams() {
   const params = {
-    status: statusFilter.value,
+    status: statusIds.value.length ? statusIds.value : 'alle',
     search: searchQuery.value || undefined,
     room_id: roomId.value || undefined,
     category_ids: categoryIds.value.length ? categoryIds.value : undefined,

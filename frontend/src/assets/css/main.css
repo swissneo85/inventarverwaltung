@@ -9,6 +9,8 @@
   --text-accent: #1d4ed8;
   --border-accent: #3b82f6;
   --text-muted: #6b7280;
+  --text-danger: #dc2626;
+  --bg-danger: #fee2e2;
 }
 
 html, body {
