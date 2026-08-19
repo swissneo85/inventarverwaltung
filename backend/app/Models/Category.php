@@ -45,14 +45,6 @@ class Category extends Model
         return $this->hasMany(Item::class, 'category_id');
     }
 
-    /**
-     * Benutzer mit Zugriff auf diese Kategorie
-     */
-    public function users()
-    {
-        return $this->belongsToMany(User::class, 'user_categories');
-    }
-
     public function viewerPermissions()
     {
         return $this->belongsToMany(User::class, 'user_category_permissions');

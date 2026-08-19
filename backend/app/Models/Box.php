@@ -131,21 +131,6 @@ class Box extends Model
     /**
      * Scopes
      */
-    public function scopeInInbox($query)
-    {
-        return $query->where('is_in_inbox', true);
-    }
-
-    public function scopeNotInInbox($query)
-    {
-        return $query->where('is_in_inbox', false);
-    }
-
-    public function scopeInRoom($query, $roomId)
-    {
-        return $query->where('room_id', $roomId);
-    }
-
     public function scopeOrdered($query)
     {
         return $query->orderBy('sort_order')->orderBy('name');

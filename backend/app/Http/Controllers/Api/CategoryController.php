@@ -163,20 +163,4 @@ class CategoryController extends BaseApiController
 
         return $this->success($items);
     }
-
-    /**
-     * Benutzer mit Zugriff auf diese Kategorie
-     */
-    public function users(Request $request, $id)
-    {
-        $category = Category::find($id);
-        
-        if (!$category) {
-            return $this->error('Kategorie nicht gefunden', 404);
-        }
-
-        $users = $category->users()->get(['id', 'name', 'username', 'role']);
-
-        return $this->success($users);
-    }
 }

@@ -77,16 +77,6 @@ class LoginLog extends Model
         return $query->where('success', false);
     }
 
-    public function scopeRecent($query, $days = 30)
-    {
-        return $query->where('login_at', '>=', now()->subDays($days));
-    }
-
-    public function scopeForUser($query, $userId)
-    {
-        return $query->where('user_id', $userId);
-    }
-
     public function scopeFromIp($query, $ip)
     {
         return $query->where('ip_address', $ip);
