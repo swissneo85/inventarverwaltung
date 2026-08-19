@@ -49,9 +49,11 @@ class DashboardController extends BaseApiController
         $limit = $request->get('limit', 10);
         
         $items = Item::with(['category', 'room', 'box'])
+            ->visibleToUser($request->user())
             ->orderBy('created_at', 'desc')
             ->limit($limit)
             ->get();
+        $this->hidePriceIfNeeded($items);
 
         return $this->success($items);
     }
@@ -62,10 +64,12 @@ class DashboardController extends BaseApiController
     public function inbox(Request $request)
     {
         $items = Item::with(['category', 'coverImage'])
+            ->visibleToUser($request->user())
             ->where('is_in_inbox', true)
             ->orderBy('created_at', 'desc')
             ->limit(20)
             ->get();
+        $this->hidePriceIfNeeded($items);
 
         $boxes = Box::with(['room', 'coverImage'])
             ->where('is_in_inbox', true)
@@ -90,17 +94,21 @@ class DashboardController extends BaseApiController
         $days = $request->get('days', 90);
 
         $expiring = Item::with(['category', 'room', 'box'])
+            ->visibleToUser($request->user())
             ->whereNotNull('warranty_until')
             ->where('warranty_until', '<=', now()->addDays($days))
             ->where('warranty_until', '>=', now())
             ->orderBy('warranty_until')
             ->get();
+        $this->hidePriceIfNeeded($expiring);
 
         $expired = Item::with(['category', 'room', 'box'])
+            ->visibleToUser($request->user())
             ->whereNotNull('warranty_until')
             ->where('warranty_until', '<', now())
             ->orderBy('warranty_until')
             ->get();
+        $this->hidePriceIfNeeded($expired);
 
         return $this->success([
             'expiring' => $expiring,

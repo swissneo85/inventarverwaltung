@@ -148,6 +148,10 @@ class CategoryController extends BaseApiController
             return $this->error('Kategorie nicht gefunden', 404);
         }
 
+        if (!$request->user()->canViewCategory($category->id)) {
+            return $this->error('Kategorie nicht gefunden', 404);
+        }
+
         $query = $category->items()->with(['room', 'box']);
         
         if ($request->has('search')) {
@@ -155,6 +159,7 @@ class CategoryController extends BaseApiController
         }
 
         $items = $query->orderBy('name')->paginate($request->get('per_page', 50));
+        $this->hidePriceIfNeeded($items);
 
         return $this->success($items);
     }

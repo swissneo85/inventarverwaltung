@@ -94,15 +94,7 @@ class ItemController extends BaseApiController
         $query = Item::query();
 
         // Kategorie-Filter für Viewer mit konfigurierten Berechtigungen
-        if ($user->role === 'viewer') {
-            $allowedCategoryIds = $user->categoryPermissions->pluck('id');
-            if ($allowedCategoryIds->isNotEmpty()) {
-                $query->where(function ($q) use ($allowedCategoryIds) {
-                    $q->whereIn('category_id', $allowedCategoryIds)
-                      ->orWhereNull('category_id');
-                });
-            }
-        }
+        $query->visibleToUser($user);
 
         // Status-Filter (Mehrfachauswahl, Default: nur aktive Items)
         // "alle" ist ein Sentinel-Wert für "kein Status-Filter" (z. B. wenn im Frontend
@@ -198,6 +190,7 @@ class ItemController extends BaseApiController
     public function inbox(Request $request)
     {
         $items = Item::with(['category', 'coverImage'])
+            ->visibleToUser($request->user())
             ->where('is_in_inbox', true)
             ->orderBy('created_at', 'desc')
             ->paginate($request->get('per_page', 50));
@@ -290,6 +283,10 @@ class ItemController extends BaseApiController
         $item = Item::findByDisplayId($id) ?? Item::find($id);
         
         if (!$item) {
+            return $this->error('Item nicht gefunden', 404);
+        }
+
+        if (!$request->user()->canViewCategory($item->category_id)) {
             return $this->error('Item nicht gefunden', 404);
         }
 
@@ -438,7 +435,12 @@ class ItemController extends BaseApiController
             return $this->error('Item nicht gefunden', 404);
         }
 
+        if (!$request->user()->canViewCategory($item->category_id)) {
+            return $this->error('Item nicht gefunden', 404);
+        }
+
         $items = $item->childItems()
+            ->visibleToUser($request->user())
             ->with(['category', 'room', 'box.room', 'coverImage',
                 'parentItem.room', 'parentItem.box.room'])
             ->orderBy('name')
@@ -588,16 +590,4 @@ class ItemController extends BaseApiController
         return $this->error('QR-Code nicht gefunden', 404);
     }
 
-    private function hidePriceIfNeeded(mixed $data): void
-    {
-        if (auth()->user()->canViewKaufpreis()) return;
-
-        if ($data instanceof \Illuminate\Pagination\LengthAwarePaginator) {
-            $data->getCollection()->each->makeHidden('purchase_price');
-        } elseif ($data instanceof \Illuminate\Support\Collection) {
-            $data->each->makeHidden('purchase_price');
-        } elseif ($data instanceof Item) {
-            $data->makeHidden('purchase_price');
-        }
-    }
 }

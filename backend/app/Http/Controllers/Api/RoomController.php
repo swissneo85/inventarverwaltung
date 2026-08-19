@@ -129,7 +129,9 @@ class RoomController extends BaseApiController
             return $this->error('Raum nicht gefunden', 404);
         }
 
-        $query = $room->items()->with(['category', 'coverImage', 'room', 'box.room', 'parentItem.room', 'parentItem.box.room']);
+        $query = $room->items()
+            ->visibleToUser($request->user())
+            ->with(['category', 'coverImage', 'room', 'box.room', 'parentItem.room', 'parentItem.box.room']);
 
         // Status-Filter (Default: nur aktive Items)
         $statusFilter = $request->get('status', 'aktiv');
@@ -144,6 +146,7 @@ class RoomController extends BaseApiController
         }
 
         $items = $query->orderBy('name')->paginate($request->get('per_page', 50));
+        $this->hidePriceIfNeeded($items);
 
         return $this->success($items);
     }

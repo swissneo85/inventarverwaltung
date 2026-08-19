@@ -11,6 +11,7 @@ use FilesystemIterator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
@@ -161,7 +162,7 @@ class BackupController extends BaseApiController
         $sqliteEntry = null;
         for ($i = 0; $i < $zip->numFiles; $i++) {
             $name = $zip->getNameIndex($i);
-            if (str_ends_with($name, '.sqlite')) {
+            if (str_ends_with($name, '.sqlite') && !str_contains($name, '..')) {
                 $sqliteEntry = $name;
                 break;
             }
@@ -208,11 +209,11 @@ class BackupController extends BaseApiController
             for ($i = 0; $i < $zip->numFiles; $i++) {
                 $name = $zip->getNameIndex($i);
                 if (str_starts_with($name, 'storage/') && !str_ends_with($name, '/')) {
-                    $rel     = substr($name, strlen('storage/'));
-                    $dest    = $pubPath . '/' . $rel;
-                    $destDir = dirname($dest);
-                    if (!is_dir($destDir)) {
-                        mkdir($destDir, 0755, true);
+                    $rel  = substr($name, strlen('storage/'));
+                    $dest = $this->safeExtractionPath($pubPath, $rel);
+                    if ($dest === null) {
+                        Log::warning('Backup-Restore: unsicherer ZIP-Eintrag übersprungen', ['entry' => $name]);
+                        continue;
                     }
                     file_put_contents($dest, $zip->getFromName($name));
                 }
@@ -249,7 +250,7 @@ class BackupController extends BaseApiController
                     mkdir($tmpRb, 0755, true);
                     for ($i = 0; $i < $rb->numFiles; $i++) {
                         $name = $rb->getNameIndex($i);
-                        if (str_ends_with($name, '.sqlite')) {
+                        if (str_ends_with($name, '.sqlite') && !str_contains($name, '..')) {
                             $rb->extractTo($tmpRb, [$name]);
                             copy($tmpRb . '/' . $name, $dbPath);
                             @chmod($dbPath, 0666);
@@ -260,11 +261,11 @@ class BackupController extends BaseApiController
                     for ($i = 0; $i < $rb->numFiles; $i++) {
                         $name = $rb->getNameIndex($i);
                         if (str_starts_with($name, 'storage/') && !str_ends_with($name, '/')) {
-                            $rel     = substr($name, strlen('storage/'));
-                            $dest    = $pubPath . '/' . $rel;
-                            $destDir = dirname($dest);
-                            if (!is_dir($destDir)) {
-                                mkdir($destDir, 0755, true);
+                            $rel  = substr($name, strlen('storage/'));
+                            $dest = $this->safeExtractionPath($pubPath, $rel);
+                            if ($dest === null) {
+                                Log::warning('Backup-Rollback: unsicherer ZIP-Eintrag übersprungen', ['entry' => $name]);
+                                continue;
                             }
                             file_put_contents($dest, $rb->getFromName($name));
                         }
@@ -283,6 +284,41 @@ class BackupController extends BaseApiController
                 500
             );
         }
+    }
+
+    /**
+     * Löst den Zielpfad für einen ZIP-Eintrag sicher auf und stellt sicher, dass er
+     * tatsächlich unterhalb von $pubPath liegt (Schutz vor Zip-Slip / Path-Traversal).
+     * Gibt null zurück, wenn der Eintrag verdächtig ist (z. B. ".." im Pfad oder das
+     * Zielverzeichnis liegt ausserhalb von $pubPath, etwa via Symlink).
+     */
+    private function safeExtractionPath(string $pubPath, string $rel): ?string
+    {
+        if ($rel === '' || str_contains($rel, '..') || str_starts_with($rel, '/')) {
+            return null;
+        }
+
+        $realBase = realpath($pubPath);
+        if ($realBase === false) {
+            return null;
+        }
+
+        $dest    = $pubPath . '/' . $rel;
+        $destDir = dirname($dest);
+        if (!is_dir($destDir)) {
+            mkdir($destDir, 0755, true);
+        }
+
+        $realDestDir = realpath($destDir);
+        if ($realDestDir === false) {
+            return null;
+        }
+
+        if (!str_starts_with($realDestDir . DIRECTORY_SEPARATOR, rtrim($realBase, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR)) {
+            return null;
+        }
+
+        return $dest;
     }
 
     private function clearDir(string $dir): void

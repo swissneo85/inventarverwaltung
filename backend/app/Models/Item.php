@@ -372,6 +372,29 @@ class Item extends Model
         return $query->where('status', 'aktiv');
     }
 
+    /**
+     * Sichtbarkeit für Viewer mit eingeschränkten Kategorie-Berechtigungen:
+     * Items ohne Kategorie sind immer sichtbar, Items mit Kategorie nur wenn erlaubt.
+     * Admin/Editor sowie Viewer ohne konfigurierte Berechtigungen sehen alles
+     * (identische Logik zu User::canViewCategory()).
+     */
+    public function scopeVisibleToUser($query, $user)
+    {
+        if (!$user || $user->role !== 'viewer') {
+            return $query;
+        }
+
+        $allowedCategoryIds = $user->categoryPermissions->pluck('id');
+        if ($allowedCategoryIds->isEmpty()) {
+            return $query;
+        }
+
+        return $query->where(function ($q) use ($allowedCategoryIds) {
+            $q->whereIn('category_id', $allowedCategoryIds)
+              ->orWhereNull('category_id');
+        });
+    }
+
     public function scopeInInbox($query)
     {
         return $query->where('is_in_inbox', true);

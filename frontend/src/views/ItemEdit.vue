@@ -353,6 +353,10 @@ const rooms = ref([])
 const boxes = ref([])
 const persons = ref([])
 const pendingFiles = ref([])
+// Ob der Server beim Laden das purchase_price-Feld überhaupt geliefert hat
+// (Muster aus ItemDetail.vue) — bei fehlendem Kaufpreis-Recht wird es serverseitig
+// entfernt. Neu: bei neuen Items ist das Feld naturgemäss vorhanden.
+const hasPurchasePriceField = ref(true)
 
 const roomOptions = computed(() => [
   { value: '', label: '— Inbox (kein Raum) —' },
@@ -453,6 +457,7 @@ onMounted(async () => {
 
     if (id) {
       const item = results[4].data.data
+      hasPurchasePriceField.value = Object.prototype.hasOwnProperty.call(item, 'purchase_price')
       form.value = {
         name: item.name ?? '',
         description: item.description ?? '',
@@ -614,6 +619,9 @@ function buildPayload() {
     box_id: loc === 'box' ? nullify(f.box_id) : null,
     parent_item_id: loc === 'item' ? (f.parent_item_id || null) : null,
     is_in_inbox: loc === 'inbox',
+  }
+  if (!hasPurchasePriceField.value) {
+    delete payload.purchase_price
   }
   return payload
 }

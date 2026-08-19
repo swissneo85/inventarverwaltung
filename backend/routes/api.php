@@ -88,11 +88,16 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/items/{id}/items', [ItemController::class, 'childItems']);
 
     // Ausgeliehene Gegenstände
-    Route::get('loans', function () {
+    Route::get('loans', function (Request $request) {
         $items = \App\Models\Item::with(['loanedToPerson', 'room', 'box'])
             ->whereNotNull('loaned_to_person_id')
             ->orderBy('name')
             ->get();
+
+        if (!$request->user()->canViewKaufpreis()) {
+            $items->each->makeHidden('purchase_price');
+        }
+
         return response()->json(['success' => true, 'data' => $items]);
     });
 

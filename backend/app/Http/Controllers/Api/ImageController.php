@@ -34,7 +34,16 @@ class ImageController extends BaseApiController
         ]);
 
         $file = $r->file('image');
-        $ext = $file->getClientOriginalExtension();
+
+        // Endung aus dem tatsächlichen Dateiinhalt ableiten (nicht vom Client-Dateinamen),
+        // damit eine hochgeladene Datei nicht unter einer vom Client vorgegebenen,
+        // potentiell ausführbaren Endung (z. B. .php) gespeichert werden kann.
+        $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'heif'];
+        $ext = strtolower((string) $file->guessExtension());
+        if (!in_array($ext, $allowedExtensions, true)) {
+            return $this->error('Ungültiger Dateityp', 422);
+        }
+
         $uuid = Str::uuid()->toString();
         $path = 'images/' . $uuid . '.' . $ext;
 

@@ -26,7 +26,7 @@ class SearchController extends BaseApiController
 
         // Display-ID erkannt? (R1, B12, I500)
         if (preg_match('/^([RBI])(\d+)$/i', $term, $matches)) {
-            return $this->findByDisplayId($matches[1], $matches[2]);
+            return $this->findByDisplayId($matches[1], $matches[2], $request->user());
         }
 
         // Items suchen (nur aktive Items)
@@ -37,10 +37,12 @@ class SearchController extends BaseApiController
                     'parentItem.parentItem.room', 'parentItem.parentItem.box.room',
                 ])
                 ->aktiv()
+                ->visibleToUser($request->user())
                 ->search($term)
                 ->orderBy('name')
                 ->limit(20)
                 ->get();
+            $this->hidePriceIfNeeded($items);
 
             $results['items'] = $items;
         }
@@ -98,7 +100,7 @@ class SearchController extends BaseApiController
     /**
      * Nach Display-ID suchen
      */
-    private function findByDisplayId($type, $id)
+    private function findByDisplayId($type, $id, $user)
     {
         switch (strtoupper($type)) {
             case 'I':
@@ -107,6 +109,10 @@ class SearchController extends BaseApiController
                     'parentItem.room', 'parentItem.box.room',
                 ])->find($id);
                 if ($item) {
+                    if (!$user->canViewCategory($item->category_id)) {
+                        break;
+                    }
+                    $this->hidePriceIfNeeded($item);
                     return $this->success([
                         'type' => 'item',
                         'data' => $item,
@@ -160,6 +166,7 @@ class SearchController extends BaseApiController
                 'parentItem.parentItem.room', 'parentItem.parentItem.box.room',
             ])
             ->aktiv()
+            ->visibleToUser($request->user())
             ->search($term)
             ->limit(10)
             ->get()

@@ -12,7 +12,7 @@ export const useAuthStore = defineStore('auth', () => {
   const isAuthenticated = computed(() => !!token.value && !!user.value)
   const isAdmin = computed(() => user.value?.role === 'admin')
   const isEditor = computed(() => ['admin', 'editor'].includes(user.value?.role))
-  const canViewKaufpreis = computed(() => user.value?.kaufpreis_sichtbar ?? false)
+  const canViewKaufpreis = computed(() => isAdmin.value || (user.value?.kaufpreis_sichtbar ?? false))
 
   async function login(username, password) {
     loading.value = true

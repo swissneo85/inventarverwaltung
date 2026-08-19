@@ -227,7 +227,9 @@ class BoxController extends BaseApiController
             return $this->error('Box nicht gefunden', 404);
         }
 
-        $query = $box->items()->with(['category', 'coverImage', 'room', 'box.room', 'parentItem.room', 'parentItem.box.room']);
+        $query = $box->items()
+            ->visibleToUser($request->user())
+            ->with(['category', 'coverImage', 'room', 'box.room', 'parentItem.room', 'parentItem.box.room']);
 
         // Status-Filter (Default: nur aktive Items)
         $statusFilter = $request->get('status', 'aktiv');
@@ -242,6 +244,7 @@ class BoxController extends BaseApiController
         }
 
         $items = $query->orderBy('name')->paginate($request->get('per_page', 50));
+        $this->hidePriceIfNeeded($items);
 
         return $this->success($items);
     }
