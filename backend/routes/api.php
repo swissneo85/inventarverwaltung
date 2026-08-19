@@ -111,7 +111,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/categories', [CategoryController::class, 'index']);
     Route::get('/categories/{id}', [CategoryController::class, 'show']);
     Route::get('/categories/{id}/items', [CategoryController::class, 'items']);
-    Route::get('/categories/{id}/users', [CategoryController::class, 'users']);
 
     // ─── SCHREIBEN — admin + editor ────────────────────────────────────
     Route::middleware('role:admin,editor')->group(function () {
@@ -171,7 +170,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Benutzer
         Route::apiResource('users', UserController::class);
-        Route::get('/users/{id}/categories', [UserController::class, 'categories']);
         Route::get('/users/{id}/category-permissions', [UserCategoryPermissionController::class, 'index']);
         Route::put('/users/{id}/category-permissions', [UserCategoryPermissionController::class, 'update']);
 

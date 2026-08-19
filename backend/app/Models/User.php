@@ -64,19 +64,6 @@ class User extends Authenticatable
         return $this->isAdmin() || (bool) $this->kaufpreis_sichtbar;
     }
 
-    public function categories()
-    {
-        return $this->belongsToMany(Category::class, 'user_categories');
-    }
-
-    public function hasAccessToCategory(int $categoryId): bool
-    {
-        if ($this->isAdmin()) {
-            return true;
-        }
-        return $this->categories()->where('category_id', $categoryId)->exists();
-    }
-
     public function loginLogs()
     {
         return $this->hasMany(LoginLog::class);

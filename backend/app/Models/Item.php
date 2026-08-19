@@ -395,39 +395,9 @@ class Item extends Model
         });
     }
 
-    public function scopeInInbox($query)
-    {
-        return $query->where('is_in_inbox', true);
-    }
-
-    public function scopeNotInInbox($query)
-    {
-        return $query->where('is_in_inbox', false);
-    }
-
-    public function scopeInRoom($query, $roomId)
-    {
-        return $query->where('room_id', $roomId);
-    }
-
-    public function scopeInBox($query, $boxId)
-    {
-        return $query->where('box_id', $boxId);
-    }
-
     public function scopeTopLevel($query)
     {
         return $query->whereNull('parent_item_id');
-    }
-
-    public function scopeChildrenOf($query, $itemId)
-    {
-        return $query->where('parent_item_id', $itemId);
-    }
-
-    public function scopeInCategory($query, $categoryId)
-    {
-        return $query->where('category_id', $categoryId);
     }
 
     public function scopeWarrantyExpiring($query, $days = 30)

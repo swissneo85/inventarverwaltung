@@ -49,7 +49,7 @@ class AuthController extends BaseApiController
 
         $token = $user->createToken('auth-token')->plainTextToken;
 
-        $user->load(['categories', 'categoryPermissions']);
+        $user->load('categoryPermissions');
 
         return $this->success([
             'user' => $user,
@@ -75,7 +75,7 @@ class AuthController extends BaseApiController
      */
     public function me(Request $request)
     {
-        return $this->success($request->user()->load('categories'));
+        return $this->success($request->user());
     }
 
     /**

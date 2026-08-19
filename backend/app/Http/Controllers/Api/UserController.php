@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api;
 
 use App\Models\User;
-use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
@@ -19,8 +18,8 @@ class UserController extends BaseApiController
             return $this->error('Keine Berechtigung', 403);
         }
 
-        $query = User::with('categories');
-        
+        $query = User::query();
+
         if ($request->has('role')) {
             $query->where('role', $request->role);
         }
@@ -49,8 +48,6 @@ class UserController extends BaseApiController
             'email' => 'nullable|email|unique:users,email',
             'password' => ['required', Password::min(8)],
             'role' => 'required|in:admin,editor,viewer',
-            'categories' => 'nullable|array',
-            'categories.*' => 'exists:categories,id',
             'kaufpreis_sichtbar' => 'nullable|boolean',
         ]);
 
@@ -66,11 +63,7 @@ class UserController extends BaseApiController
                 : ($request->role === 'admin'),
         ]);
 
-        if ($request->has('categories') && $request->role !== 'admin') {
-            $user->categories()->sync($request->categories);
-        }
-
-        return $this->success($user->load('categories'), 'Benutzer erstellt', 201);
+        return $this->success($user, 'Benutzer erstellt', 201);
     }
 
     /**
@@ -83,7 +76,7 @@ class UserController extends BaseApiController
             return $this->error('Keine Berechtigung', 403);
         }
 
-        $user = User::with('categories')->find($id);
+        $user = User::find($id);
         
         if (!$user) {
             return $this->error('Benutzer nicht gefunden', 404);
@@ -117,8 +110,6 @@ class UserController extends BaseApiController
         if ($request->user()->isAdmin()) {
             $rules['role'] = 'sometimes|in:admin,editor,viewer';
             $rules['active'] = 'sometimes|boolean';
-            $rules['categories'] = 'nullable|array';
-            $rules['categories.*'] = 'exists:categories,id';
             $rules['kaufpreis_sichtbar'] = 'sometimes|boolean';
         }
 
@@ -141,12 +132,7 @@ class UserController extends BaseApiController
 
         $user->update($updateData);
 
-        // Kategorien aktualisieren (nur für Nicht-Admins)
-        if ($request->user()->isAdmin() && $request->has('categories') && $user->role !== 'admin') {
-            $user->categories()->sync($request->categories ?? []);
-        }
-
-        return $this->success($user->load('categories'), 'Benutzer aktualisiert');
+        return $this->success($user, 'Benutzer aktualisiert');
     }
 
     /**
@@ -201,21 +187,5 @@ class UserController extends BaseApiController
         $user->delete();
 
         return $this->success(null, 'Benutzer gelöscht');
-    }
-
-    /**
-     * Kategorien für aktuellen Benutzer
-     */
-    public function categories(Request $request)
-    {
-        $user = $request->user;
-
-        if ($user->isAdmin()) {
-            $categories = Category::active()->ordered()->get();
-        } else {
-            $categories = $user->categories()->active()->ordered()->get();
-        }
-
-        return $this->success($categories);
     }
 }
