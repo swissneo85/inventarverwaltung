@@ -123,6 +123,15 @@
       <p>Wird geladen...</p>
     </div>
     
+    <div v-else-if="items.length === 0 && hasActiveFilters" class="empty-state">
+      <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+      <h3>Keine Treffer für diese Filter</h3>
+      <p>Passen Sie die Filter an oder setzen Sie sie zurück</p>
+      <button class="btn btn-primary" @click="resetAll">Filter zurücksetzen</button>
+    </div>
+
     <div v-else-if="items.length === 0" class="empty-state">
       <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
@@ -182,7 +191,9 @@
               <th>Gegenstand</th>
               <th>Kategorie</th>
               <th>Standort</th>
+              <th>Besitzer</th>
               <th>Zustand</th>
+              <th>Status</th>
               <th style="width:80px"></th>
             </tr>
           </thead>
@@ -204,8 +215,15 @@
               </td>
               <td class="td-loc">{{ getLocationText(item) || '—' }}</td>
               <td>
+                <span v-if="item.person">{{ item.person.name }}</span>
+                <span v-else class="muted">—</span>
+              </td>
+              <td>
                 <span v-if="item.condition" :class="['condition-badge', conditionClass(item.condition)]">{{ item.condition }}</span>
                 <span v-else class="muted">—</span>
+              </td>
+              <td>
+                <span :class="['status-badge', statusBadgeClass(item.status)]">{{ statusLabel(item.status) }}</span>
               </td>
               <td class="td-actions">
                 <div class="actions-wrap">
@@ -244,7 +262,9 @@
               <span class="row-id">{{ item.display_id || 'I' + item.id }}</span>
               <span v-if="item.category" class="chip">{{ item.category.name }}</span>
               <span v-if="item.condition" :class="['condition-badge', conditionClass(item.condition)]">{{ item.condition }}</span>
+              <span :class="['status-badge', statusBadgeClass(item.status)]">{{ statusLabel(item.status) }}</span>
             </div>
+            <div v-if="item.person" class="mobile-row-loc">{{ item.person.name }}</div>
             <div v-if="getLocationText(item)" class="mobile-row-loc">{{ getLocationText(item) }}</div>
           </div>
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="mobile-row-chevron">
@@ -426,6 +446,7 @@ function resetAll() {
   ownerIds.value = []
   statusIds.value = ['aktiv']
   quick.value = { inbox: false, no_category: false, no_photo: false, warranty_expiring: false }
+  showAccessories.value = false
   applyFilters()
 }
 
@@ -463,6 +484,7 @@ function hydrateFromQuery() {
     no_photo: quickList.includes('no_photo'),
     warranty_expiring: quickList.includes('warranty_expiring'),
   }
+  showAccessories.value = q.accessories === '1'
 }
 
 function buildQueryParams() {
@@ -478,6 +500,7 @@ function buildQueryParams() {
   }
   const activeQuick = quickChips.filter(chip => quick.value[chip.key]).map(chip => chip.key)
   if (activeQuick.length) q.quick = activeQuick.join(',')
+  if (showAccessories.value) q.accessories = '1'
   return q
 }
 
@@ -593,6 +616,31 @@ function getLocationText(item) {
 function conditionClass(condition) {
   const map = { 'Neu': 'cond-new', 'Gut': 'cond-good', 'Gebraucht': 'cond-used', 'Defekt': 'cond-broken' }
   return map[condition] || 'cond-default'
+}
+
+const STATUS_BADGE_LABELS = {
+  aktiv: 'Aktiv',
+  entsorgt: 'Entsorgt',
+  verkauft: 'Verkauft',
+  verschenkt: 'Verschenkt',
+  verloren: 'Verloren',
+  defekt_entsorgt: 'Defekt / Entsorgt',
+}
+
+function statusLabel(status) {
+  return STATUS_BADGE_LABELS[status] || status || 'Aktiv'
+}
+
+function statusBadgeClass(status) {
+  const map = {
+    aktiv: 'status-aktiv',
+    entsorgt: 'status-entsorgt',
+    defekt_entsorgt: 'status-entsorgt',
+    verloren: 'status-verloren',
+    verkauft: 'status-verkauft',
+    verschenkt: 'status-verkauft',
+  }
+  return map[status] || 'status-default'
 }
 </script>
 
@@ -1051,6 +1099,20 @@ function conditionClass(condition) {
 .cond-used    { background: #fef3c7; color: #92400e; }
 .cond-broken  { background: #fee2e2; color: #991b1b; }
 .cond-default { background: #f3f4f6; color: #6b7280; }
+
+.status-badge {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 99px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.status-aktiv    { background: #d1fae5; color: #065f46; }
+.status-entsorgt { background: #f3f4f6; color: #374151; }
+.status-verloren { background: #fee2e2; color: #991b1b; }
+.status-verkauft { background: #e0f2fe; color: #075985; }
+.status-default  { background: #f3f4f6; color: #6b7280; }
 
 .td-actions {
   white-space: nowrap;
