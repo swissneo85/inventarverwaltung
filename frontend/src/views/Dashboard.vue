@@ -82,7 +82,7 @@
         <strong>Garantie-Warnung:</strong> 
         {{ warrantyExpiring }} Gegenstände haben in den nächsten 30 Tagen ablaufende Garantien
       </span>
-      <router-link to="/items?warranty_expiring=30" class="alert-link">
+      <router-link to="/items?quick=warranty_expiring" class="alert-link">
         Ansehen →
       </router-link>
     </div>

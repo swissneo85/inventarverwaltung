@@ -9,7 +9,12 @@
     <span class="item-id">{{ item.display_id || 'I' + item.id }}</span>
     <span class="item-name">{{ item.name }}</span>
     <div class="item-footer" @click.stop>
-      <span class="item-cat">{{ item.category?.name || '' }}</span>
+      <div class="item-tags">
+        <span v-if="item.category" class="item-cat">{{ item.category.name }}</span>
+        <span v-if="item.condition" :class="['condition-badge', conditionClass(item.condition)]">{{ item.condition }}</span>
+        <span :class="['status-badge', statusBadgeClass(item.status)]">{{ statusLabel(item.status) }}</span>
+        <span v-if="item.person" class="item-owner">{{ item.person.name }}</span>
+      </div>
       <span class="item-loc">{{ locationText || '' }}</span>
       <div class="item-actions">
         <router-link :to="`/items/${item.id}`" class="row-btn" title="Details">
@@ -49,12 +54,42 @@ const locationText = computed(() => {
   if (props.item.room) return props.item.room.name || `R${props.item.room.id}`
   return null
 })
+
+function conditionClass(condition) {
+  const map = { 'Neu': 'cond-new', 'Gut': 'cond-good', 'Gebraucht': 'cond-used', 'Defekt': 'cond-broken' }
+  return map[condition] || 'cond-default'
+}
+
+const STATUS_LABELS = {
+  aktiv: 'Aktiv',
+  entsorgt: 'Entsorgt',
+  verkauft: 'Verkauft',
+  verschenkt: 'Verschenkt',
+  verloren: 'Verloren',
+  defekt_entsorgt: 'Defekt / Entsorgt',
+}
+
+function statusLabel(status) {
+  return STATUS_LABELS[status] || status || 'Aktiv'
+}
+
+function statusBadgeClass(status) {
+  const map = {
+    aktiv: 'status-aktiv',
+    entsorgt: 'status-entsorgt',
+    defekt_entsorgt: 'status-entsorgt',
+    verloren: 'status-verloren',
+    verkauft: 'status-verkauft',
+    verschenkt: 'status-verkauft',
+  }
+  return map[status] || 'status-default'
+}
 </script>
 
 <style lang="scss" scoped>
 .item-row {
   display: grid;
-  grid-template-columns: 48px 40px minmax(0, 1fr) 110px 1fr auto;
+  grid-template-columns: 48px 40px minmax(0, 1fr) minmax(160px, auto) 1fr auto;
   align-items: center;
   gap: 0.75rem;
   padding: 0.5rem 1rem;
@@ -109,6 +144,13 @@ const locationText = computed(() => {
   display: contents;
 }
 
+.item-tags {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
 .item-cat {
   font-size: 0.75rem;
   color: #9ca3af;
@@ -116,6 +158,40 @@ const locationText = computed(() => {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+.item-owner {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  white-space: nowrap;
+}
+
+.condition-badge {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 99px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.cond-new     { background: #d1fae5; color: #065f46; }
+.cond-good    { background: #dbeafe; color: #1e40af; }
+.cond-used    { background: #fef3c7; color: #92400e; }
+.cond-broken  { background: #fee2e2; color: #991b1b; }
+.cond-default { background: #f3f4f6; color: #6b7280; }
+
+.status-badge {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 99px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.status-aktiv    { background: #d1fae5; color: #065f46; }
+.status-entsorgt { background: #f3f4f6; color: #374151; }
+.status-verloren { background: #fee2e2; color: #991b1b; }
+.status-verkauft { background: #e0f2fe; color: #075985; }
+.status-default  { background: #f3f4f6; color: #6b7280; }
 
 .item-loc {
   font-size: 0.75rem;
@@ -173,8 +249,14 @@ const locationText = computed(() => {
     grid-row: 2;
     justify-content: space-between;
   }
-  .item-cat, .item-loc {
+  .item-tags, .item-loc {
     flex-shrink: 0;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: unset;
+  }
+
+  .item-cat {
     white-space: normal;
     overflow: visible;
     text-overflow: unset;

@@ -176,6 +176,15 @@
       </div>
     </template>
 
+    <div v-else-if="search" class="empty-state">
+      <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+      <h3>Keine Treffer für diese Filter</h3>
+      <p>Passen Sie die Suche an oder setzen Sie sie zurück</p>
+      <button class="btn-primary" @click="resetSearch">Filter zurücksetzen</button>
+    </div>
+
     <div v-else class="empty-state">
       <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
@@ -250,6 +259,11 @@ async function fetchBoxes() {
 
 function isEmpty(box) {
   return !box.items_count
+}
+
+function resetSearch() {
+  search.value = ''
+  fetchBoxes()
 }
 
 function confirmDelete(box) {

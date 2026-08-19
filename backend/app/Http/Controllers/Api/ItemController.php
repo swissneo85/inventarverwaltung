@@ -21,7 +21,7 @@ class ItemController extends BaseApiController
         }
 
         $query->with([
-            'category', 'room', 'box.room', 'coverImage',
+            'category', 'room', 'box.room', 'coverImage', 'person',
             'parentItem.room', 'parentItem.box.room',
             'parentItem.parentItem.room', 'parentItem.parentItem.box.room',
         ]);
